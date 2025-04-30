@@ -1,0 +1,12 @@
+unstable_features = true
+
+imports_granularity = "Crate"
+reorder_impl_items = true
+reorder_imports = true
+group_imports = "StdExternalCrate"
+reorder_modules = true
+match_arm_blocks = false
+match_block_trailing_comma = false
+trailing_comma = "Always"
+use_try_shorthand = true
+wrap_comments = true
