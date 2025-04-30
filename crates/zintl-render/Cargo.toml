@@ -1,0 +1,10 @@
+[package]
+name = "zintl-render"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+zintl = { path = "../zintl" }
+winit = "0.29"
+wgpu = "0.19"
+pollster = "0.3"
