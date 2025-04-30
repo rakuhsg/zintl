@@ -34,7 +34,3 @@
 /// ```
 ///
 pub mod app;
-pub mod elements;
-pub mod render;
-pub mod style;
-pub mod view;
