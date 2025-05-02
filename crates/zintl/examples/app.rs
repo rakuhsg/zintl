@@ -1,7 +1,7 @@
 use zintl::app::{self, App, ComposableView, Context, Label, Stack, View};
 use zintl_render::run_app;
 
-struct Counter {
+/*struct Counter {
     count: i32,
     context: Context,
 }
@@ -22,16 +22,10 @@ impl ComposableView for Counter {
     fn compose(&mut self) -> impl View {
         Stack::new()
     }
-}
+}*/
 
 fn main() {
-    let app = App::new(Counter::new().padding(10., 10., 10., 10.).children([
-        Stack::new().padding(10., 10., 10., 10.).children([
-            Label::new("hi"),
-            Label::new("hello"),
-            Label::new("world").children([Label::new("hi")]),
-        ]),
-    ]));
+    let app = App::new(Label::new("Hello, World!"));
 
     run_app(app);
 }

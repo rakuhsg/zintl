@@ -50,6 +50,9 @@ impl<'a> ApplicationHandler for Application<'a> {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
+                if let Some(wgpu) = &mut self.wgpu {
+                    wgpu.render();
+                }
                 // Redraw the application.
                 //
                 // It's preferable for applications that do not render continuously to render in
@@ -63,7 +66,12 @@ impl<'a> ApplicationHandler for Application<'a> {
                 // You only need to call this if you've determined that you need to redraw in
                 // applications which do not always need to. Applications that redraw continuously
                 // can render here instead.
-                self.window.as_ref().unwrap().request_redraw();
+                //self.window.as_ref().unwrap().request_redraw();
+            }
+            WindowEvent::Resized(size) => {
+                if let Some(wgpu) = &mut self.wgpu {
+                    wgpu.resize(size.width, size.height);
+                }
             }
             _ => (),
         }

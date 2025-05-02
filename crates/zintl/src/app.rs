@@ -1,4 +1,4 @@
-use crate::render::RenderObject;
+use crate::render::{Metrics, Position, RenderContent, RenderObject};
 
 pub struct App {
     root: RenderObject,
@@ -10,18 +10,29 @@ impl App {
             root: root.get_context().render(),
         }
     }
+
+    pub fn get_render_object(&self) -> RenderObject {
+        self.root.clone()
+    }
 }
 
 /// The context consists of a set of style properties and layouts to render views.
-pub struct Context {}
+pub struct Context {
+    pub render_object: RenderObject,
+}
 
 impl Context {
     pub fn new() -> Self {
-        Context {}
+        Context {
+            render_object: RenderObject::default(),
+        }
+    }
+    pub fn from_render_object(render_object: RenderObject) -> Self {
+        Context { render_object }
     }
     pub fn set_style_property(&self) {}
     pub fn render(&self) -> RenderObject {
-        RenderObject::new()
+        self.render_object.clone()
     }
 }
 
@@ -111,9 +122,14 @@ pub struct Label {
 
 impl Label {
     pub fn new(text: &str) -> Self {
+        let context = Context::from_render_object(RenderObject::new(
+            RenderContent::Text(text.to_string()),
+            Position::new(0., 0.),
+            Metrics::Auto,
+        ));
         Label {
             text: text.to_string(),
-            context: Context::new(),
+            context,
         }
     }
 }

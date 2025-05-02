@@ -74,11 +74,16 @@ pub struct WgpuApplication<'a> {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    /// Chached surface width
     width: u32,
+    /// Chached surface height
     height: u32,
     render_pipeline: wgpu::RenderPipeline,
-    diffuse_bind_group: wgpu::BindGroup,
+    vertices: Vec<Vertex>,
+    uniform_buffer: wgpu::Buffer,
+    uniform_bind_group: wgpu::BindGroup,
     ortho_matrix: Matrix4<f32>,
+    diffuse_bind_group: wgpu::BindGroup,
 }
 
 /// Error type for WgpuApplication
@@ -164,7 +169,7 @@ impl<'a> WgpuApplication<'a> {
         cgmath::ortho(0., width, height, 0., -1., 1.)
     }
 
-    fn create_vertex_buffer(device: wgpu::Device, vertices: &[Vertex]) -> wgpu::Buffer {
+    fn create_vertex_buffer(device: &wgpu::Device, vertices: &[Vertex]) -> wgpu::Buffer {
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(vertices),
@@ -240,23 +245,29 @@ impl<'a> WgpuApplication<'a> {
             .unwrap()
             .load()
             .unwrap();
+
+        let metrics = font.metrics();
+        let ascent = metrics.ascent as f32 / metrics.units_per_em as f32 * 128.0;
+        let descent = metrics.descent as f32 / metrics.units_per_em as f32 * 128.0;
+
         let mut canvas = Canvas::new(Vector2I::new(256, 150), Format::A8);
-        let glyph_id = font.glyph_for_char('盆').unwrap();
+        let glyph_id = font.glyph_for_char('こ').unwrap();
+
         font.rasterize_glyph(
             &mut canvas,
             glyph_id,
             128.0,
-            Transform2F::from_translation(Vector2F::new(0.0, 128.0)),
+            Transform2F::from_translation(Vector2F::new(0., ascent)),
             HintingOptions::None,
             RasterizationOptions::GrayscaleAa,
         )
         .unwrap();
-        let glyph_id = font.glyph_for_char('地').unwrap();
+        let glyph_id = font.glyph_for_char('ん').unwrap();
         font.rasterize_glyph(
             &mut canvas,
             glyph_id,
             128.0,
-            Transform2F::from_translation(Vector2F::new(128.0, 128.0)),
+            Transform2F::from_translation(Vector2F::new(128.0 + descent, ascent)),
             HintingOptions::None,
             RasterizationOptions::GrayscaleAa,
         )
@@ -422,43 +433,7 @@ impl<'a> WgpuApplication<'a> {
         let config = surface.get_default_config(&adapter, width, height).unwrap();
         surface.configure(&device, &config);
 
-        let frame = surface
-            .get_current_texture()
-            .expect("Failed to acquire next swap chain texture");
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        //
         let vertices = Self::rectangles_to_vertices(vec![[0., 1., 256., 150.]]);
-        let vertex_buffer = Self::create_vertex_buffer(device.clone(), &vertices);
-        //
-
-        let mut encoder =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        {
-            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: None,
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
-            rpass.set_pipeline(&render_pipeline);
-            rpass.set_bind_group(0, &uniform_bind_group, &[]);
-            rpass.set_bind_group(1, &diffuse_bind_group, &[]);
-            rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            rpass.draw(0..vertices.len() as u32, 0..1);
-        }
-
-        queue.submit(Some(encoder.finish()));
-        frame.present();
 
         Ok(WgpuApplication {
             surface,
@@ -468,8 +443,11 @@ impl<'a> WgpuApplication<'a> {
             width,
             height,
             render_pipeline,
-            diffuse_bind_group,
+            vertices,
+            uniform_buffer,
+            uniform_bind_group,
             ortho_matrix,
+            diffuse_bind_group,
         })
     }
 
@@ -491,6 +469,44 @@ impl<'a> WgpuApplication<'a> {
         Self::init(instance, surface, width, height).await
     }
 
+    pub fn render(&mut self) {
+        let frame = self
+            .surface
+            .get_current_texture()
+            .expect("Failed to acquire next swap chain texture");
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let vertex_buffer = Self::create_vertex_buffer(&self.device, &self.vertices);
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: None,
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+            rpass.set_pipeline(&self.render_pipeline);
+            rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
+            rpass.set_bind_group(1, &self.diffuse_bind_group, &[]);
+            rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
+            rpass.draw(0..self.vertices.len() as u32, 0..1);
+        }
+
+        self.queue.submit(Some(encoder.finish()));
+        frame.present();
+    }
+
     /*pub async fn from_canvas(canvas: CanvasElement) -> WgpuDriverResult<Self> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends: wgpu::Backends::GL,
@@ -506,9 +522,33 @@ impl<'a> WgpuApplication<'a> {
         Self::init(instance, surface, canvas.width, canvas.height).await
     }*/
 
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if self.width != width || self.height != height {
+            self.width = width;
+            self.height = height;
+            self.reconfigure_surface_size();
+        }
+    }
+
     fn reconfigure_surface_size(&mut self) {
         self.config.width = self.width;
         self.config.height = self.height;
+        let ortho = cgmath::ortho(
+            0.0,
+            self.width as f32,
+            self.height as f32,
+            0.0, // Y軸下向きの場合
+            -1.0,
+            1.0,
+        );
+        let uniforms = Uniforms {
+            ortho: ortho.into(),
+        };
+        self.queue.write_buffer(
+            &self.uniform_buffer, // 作成済みのuniformバッファ
+            0,                    // オフセット
+            bytemuck::cast_slice(&[uniforms]),
+        );
         self.surface.configure(&self.device, &self.config);
     }
 }
