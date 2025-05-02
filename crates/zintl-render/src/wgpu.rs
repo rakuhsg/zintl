@@ -1,18 +1,24 @@
 use std::{borrow::Cow, fmt::Display, sync::Arc};
 
+use cgmath::{self, Matrix4};
 use wgpu::util::DeviceExt;
 use wgpu::*;
 use winit::window::Window;
 
 use font_kit::canvas::{Canvas, Format, RasterizationOptions};
-use font_kit::family_name::FamilyName;
 use font_kit::hinting::HintingOptions;
-use font_kit::properties::Properties;
 use font_kit::source::SystemSource;
 use pathfinder_geometry::transform2d::Transform2F;
 use pathfinder_geometry::vector::{Vector2F, Vector2I};
 
 const SRC: &str = r###"
+
+struct Uniforms {
+    ortho : mat4x4<f32>,
+};
+
+@group(0) @binding(0)
+var<uniform> uniforms : Uniforms;
 
 struct VertexInput {
     @location(0) position: vec2<f32>,
@@ -30,7 +36,7 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-    out.clip_position = vec4<f32>(model.position, 0.0, 1.0);
+    out.clip_position = uniforms.ortho * vec4<f32>(model.position, 0.0, 1.0);
     return out;
 }
 
@@ -39,9 +45,9 @@ fn vs_main(@location(0) position: vec2<f32>) -> @builtin(position) vec4<f32> {
     return vec4<f32>(position, 0.0, 1.0);
 }*/
 
-@group(0) @binding(0)
+@group(1) @binding(0)
 var t_diffuse: texture_2d<f32>;
-@group(0) @binding(1)
+@group(1) @binding(1)
 var s_diffuse: sampler;
 
 @fragment
@@ -50,9 +56,17 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 }
 "###;
 
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
     position: [f32; 2],
     tex_coords: [f32; 2],
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Uniforms {
+    pub ortho: [[f32; 4]; 4],
 }
 
 pub struct WgpuApplication<'a> {
@@ -64,6 +78,7 @@ pub struct WgpuApplication<'a> {
     height: u32,
     render_pipeline: wgpu::RenderPipeline,
     diffuse_bind_group: wgpu::BindGroup,
+    ortho_matrix: Matrix4<f32>,
 }
 
 /// Error type for WgpuApplication
@@ -117,44 +132,51 @@ impl<'a> WgpuApplication<'a> {
             // Bottom-left, bottom-right, top-right
             vertices.push(Vertex {
                 position: [x, y],
-                tex_coords: [0.0, 1.0],
+                tex_coords: [0.0, 0.0],
             });
             vertices.push(Vertex {
                 position: [x + width, y],
-                tex_coords: [1.0, 1.0],
+                tex_coords: [1.0, 0.0],
             });
             vertices.push(Vertex {
                 position: [x + width, y + height],
-                tex_coords: [1.0, 0.0],
+                tex_coords: [1.0, 1.0],
             });
 
             // Bottom-left, top-right, top-left
             vertices.push(Vertex {
                 position: [x, y],
-                tex_coords: [0.0, 1.0],
-            });
-            vertices.push(Vertex {
-                position: [x, y + height],
                 tex_coords: [0.0, 0.0],
             });
             vertices.push(Vertex {
+                position: [x, y + height],
+                tex_coords: [0.0, 1.0],
+            });
+            vertices.push(Vertex {
                 position: [x + width, y + height],
-                tex_coords: [1.0, 0.0],
+                tex_coords: [1.0, 1.0],
             });
         }
         vertices
     }
 
+    fn create_ortho_matrix_from_size(width: f32, height: f32) -> Matrix4<f32> {
+        cgmath::ortho(0., width, height, 0., -1., 1.)
+    }
+
     fn create_vertex_buffer(device: wgpu::Device, vertices: &[Vertex]) -> wgpu::Buffer {
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: unsafe {
-                std::slice::from_raw_parts(
-                    vertices.as_ptr() as *const u8,
-                    vertices.len() * std::mem::size_of::<Vertex>(),
-                )
-            },
+            contents: bytemuck::cast_slice(vertices),
             usage: wgpu::BufferUsages::VERTEX,
+        })
+    }
+
+    fn create_uniform_buffer(device: &wgpu::Device, uniforms: &Uniforms) -> wgpu::Buffer {
+        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Uniform Buffer"),
+            contents: bytemuck::cast_slice(&[*uniforms]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         })
     }
 
@@ -181,13 +203,44 @@ impl<'a> WgpuApplication<'a> {
             Err(..) => return Err(WgpuApplicationError::CreateDeviceError),
         };
 
+        // Orthographic projection matrix
+        let ortho_matrix = Self::create_ortho_matrix_from_size(width as f32, height as f32);
+        let uniform_buffer = Self::create_uniform_buffer(
+            &device,
+            &Uniforms {
+                ortho: ortho_matrix.into(),
+            },
+        );
+        let uniform_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("uniform_bind_group_layout"),
+            });
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &uniform_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+            label: Some("uniform_bind_group"),
+        });
+
         // Font
         let font = SystemSource::new()
             .select_by_postscript_name("Hiragino Kaku Gothic ProN W3")
             .unwrap()
             .load()
             .unwrap();
-        let mut canvas = Canvas::new(Vector2I::splat(256), Format::A8);
+        let mut canvas = Canvas::new(Vector2I::new(256, 150), Format::A8);
         let glyph_id = font.glyph_for_char('盆').unwrap();
         font.rasterize_glyph(
             &mut canvas,
@@ -320,7 +373,7 @@ impl<'a> WgpuApplication<'a> {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
-            bind_group_layouts: &[&texture_bind_group_layout],
+            bind_group_layouts: &[&uniform_bind_group_layout, &texture_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -376,12 +429,7 @@ impl<'a> WgpuApplication<'a> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
         //
-        let vertices = Self::rectangles_to_vertices(vec![
-            [-0.25, -0.25, 0.5, 0.5],
-            [-1., 0., 0.1, 0.1],
-            [0.5, 0.5, 0.5, 0.5],
-            [-0.5, -0.5, 0.5, 0.5],
-        ]);
+        let vertices = Self::rectangles_to_vertices(vec![[0., 1., 256., 150.]]);
         let vertex_buffer = Self::create_vertex_buffer(device.clone(), &vertices);
         //
 
@@ -403,7 +451,8 @@ impl<'a> WgpuApplication<'a> {
                 occlusion_query_set: None,
             });
             rpass.set_pipeline(&render_pipeline);
-            rpass.set_bind_group(0, &diffuse_bind_group, &[]);
+            rpass.set_bind_group(0, &uniform_bind_group, &[]);
+            rpass.set_bind_group(1, &diffuse_bind_group, &[]);
             rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
             rpass.draw(0..vertices.len() as u32, 0..1);
         }
@@ -420,6 +469,7 @@ impl<'a> WgpuApplication<'a> {
             height,
             render_pipeline,
             diffuse_bind_group,
+            ortho_matrix,
         })
     }
 

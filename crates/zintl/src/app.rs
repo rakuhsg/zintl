@@ -1,11 +1,15 @@
-pub struct App {}
+use crate::render::RenderObject;
+
+pub struct App {
+    root: RenderObject,
+}
 
 impl App {
-    pub fn new() -> Self {
-        App {}
+    pub fn new(root: impl View) -> Self {
+        App {
+            root: root.get_context().render(),
+        }
     }
-
-    pub fn render(&mut self, root: impl View) {}
 }
 
 /// The context consists of a set of style properties and layouts to render views.
@@ -16,6 +20,9 @@ impl Context {
         Context {}
     }
     pub fn set_style_property(&self) {}
+    pub fn render(&self) -> RenderObject {
+        RenderObject::new()
+    }
 }
 
 /// A renderable component that has context.
@@ -117,44 +124,5 @@ impl ComposableView for Label {
     }
     fn compose(&mut self) -> impl View {
         Stack::new()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    struct Counter {
-        count: i32,
-        context: Context,
-    }
-
-    impl Counter {
-        fn new() -> Self {
-            Counter {
-                count: 0,
-                context: Context::new(),
-            }
-        }
-    }
-
-    impl ComposableView for Counter {
-        fn context(&self) -> &Context {
-            &self.context
-        }
-        fn compose(&mut self) -> impl View {
-            Stack::new()
-        }
-    }
-
-    #[test]
-    fn app() {
-        App::new().render(Counter::new().padding(10., 10., 10., 10.).children([
-            Stack::new().padding(10., 10., 10., 10.).children([
-                Label::new("hi"),
-                Label::new("hello"),
-                Label::new("world").children([Label::new("hi")]),
-            ]),
-        ]));
     }
 }

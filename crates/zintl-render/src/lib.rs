@@ -7,6 +7,7 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
+use zintl::app::App;
 
 mod wgpu;
 
@@ -69,7 +70,7 @@ impl<'a> ApplicationHandler for Application<'a> {
     }
 }
 
-pub fn run_app() {
+pub fn run_app(app: App) {
     let event_loop = EventLoop::new().unwrap();
 
     // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't

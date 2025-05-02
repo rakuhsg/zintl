@@ -1,3 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["crates/zintl", "crates/zintl-render"]
+
+[workspace.dependencies]
+zintl = { path = "crates/zintl" }
+zintl-render = { path = "crates/zintl-render" }
