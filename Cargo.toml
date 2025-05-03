@@ -2,6 +2,9 @@
 resolver = "2"
 members = ["crates/zintl", "crates/zintl-render"]
 
+[workspace.package]
+authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
+
 [workspace.dependencies]
 zintl = { path = "crates/zintl" }
 zintl-render = { path = "crates/zintl-render" }
