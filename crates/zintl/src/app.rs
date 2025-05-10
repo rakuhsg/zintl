@@ -57,6 +57,11 @@ pub trait ComposableView: Sized {
     fn compose(&mut self) -> impl View;
 
     fn children<const N: usize>(self, children: [impl View; N]) -> Self {
+        for child in children {
+            self.context()
+                .render_object
+                .add_child(child.get_context().render());
+        }
         self
     }
 }

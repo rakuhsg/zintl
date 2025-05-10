@@ -1,6 +1,8 @@
 use std::{borrow::Cow, fmt::Display, sync::Arc};
 
+use ab_glyph::{Font, Glyph, point};
 use cgmath::{self, Matrix4};
+use font_kit::handle::Handle;
 use wgpu::util::DeviceExt;
 use wgpu::*;
 use winit::window::Window;
@@ -10,6 +12,7 @@ use font_kit::hinting::HintingOptions;
 use font_kit::source::SystemSource;
 use pathfinder_geometry::transform2d::Transform2F;
 use pathfinder_geometry::vector::{Vector2F, Vector2I};
+use zintl::render::RenderObject;
 
 const SRC: &str = r###"
 
@@ -245,8 +248,35 @@ impl<'a> WgpuApplication<'a> {
             .unwrap()
             .load()
             .unwrap();
+        let font_size = [128, 128];
 
-        let metrics = font.metrics();
+        let mut rgba_pixels = vec![0u8; (font_size[0] * 4 * font_size[1]) as usize];
+
+        match font.handle().unwrap() {
+            Handle::Path { path, font_index } => {
+                println!("Path: {:?}", path.to_str());
+                println!("Font index: {:?}", font_index);
+            }
+            Handle::Memory { bytes, font_index } => {
+                let font = ab_glyph::FontVec::try_from_vec(bytes.to_vec()).unwrap();
+                let q_glyph: Glyph = font
+                    .glyph_id('善')
+                    .with_scale_and_position(font_size[0] as f32, point(0.0, 0.0));
+
+                // Draw it.
+                if let Some(q) = font.outline_glyph(q_glyph) {
+                    q.draw(|x, y, c| {
+                        let base = (y * 4 * font_size[0] + x * 4) as usize;
+                        rgba_pixels[base] = ((1. - c) * 255.) as u8; // R
+                        rgba_pixels[base + 1] = ((1. - c) * 255.) as u8; // G
+                        rgba_pixels[base + 2] = ((1. - c) * 255.) as u8; // B
+                        rgba_pixels[base + 3] = (c * 255.) as u8; // A
+                    });
+                }
+            }
+        }
+
+        /*let metrics = font.metrics();
         let ascent = metrics.ascent as f32 / metrics.units_per_em as f32 * 128.0;
         let descent = metrics.descent as f32 / metrics.units_per_em as f32 * 128.0;
 
@@ -271,11 +301,11 @@ impl<'a> WgpuApplication<'a> {
             HintingOptions::None,
             RasterizationOptions::GrayscaleAa,
         )
-        .unwrap();
+        .unwrap();*/
 
         let texture_size = wgpu::Extent3d {
-            width: canvas.size.x() as u32,
-            height: canvas.size.y() as u32,
+            width: font_size[0] as u32,
+            height: font_size[1] as u32,
             // All textures are stored as 3D, we represent our 2D texture
             // by setting depth to 1.
             depth_or_array_layers: 1,
@@ -286,7 +316,7 @@ impl<'a> WgpuApplication<'a> {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             // Most images are stored using sRGB, so we need to reflect that here.
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            format: wgpu::TextureFormat::Rgba8Unorm,
             // TEXTURE_BINDING tells wgpu that we want to use this texture in shaders
             // COPY_DST means that we want to copy data to this texture
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
@@ -300,14 +330,14 @@ impl<'a> WgpuApplication<'a> {
             // backend.
             view_formats: &[],
         });
-        let mut rgba_pixels = vec![0u8; (canvas.size.x() * canvas.size.y() * 4) as usize];
+        /* let mut rgba_pixels = vec![0u8; (font_size[0] * font_size[1] * 4) as usize];
         for (i, &alpha) in canvas.pixels.iter().enumerate() {
             let base = i * 4;
             rgba_pixels[base] = 255 - alpha; // R
             rgba_pixels[base + 1] = 255 - alpha; // G
             rgba_pixels[base + 2] = 255 - alpha; // B
             rgba_pixels[base + 3] = alpha; // A
-        }
+        }*/
 
         queue.write_texture(
             // Tells wgpu where to copy the pixel data
@@ -322,8 +352,8 @@ impl<'a> WgpuApplication<'a> {
             // The layout of the texture
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(4 * canvas.size.x() as u32),
-                rows_per_image: Some(canvas.size.y() as u32),
+                bytes_per_row: Some(4 * font_size[0] as u32),
+                rows_per_image: Some(font_size[1] as u32),
             },
             texture_size,
         );
@@ -433,7 +463,8 @@ impl<'a> WgpuApplication<'a> {
         let config = surface.get_default_config(&adapter, width, height).unwrap();
         surface.configure(&device, &config);
 
-        let vertices = Self::rectangles_to_vertices(vec![[0., 1., 256., 150.]]);
+        let vertices =
+            Self::rectangles_to_vertices(vec![[0., 0., font_size[0] as f32, font_size[1] as f32]]);
 
         Ok(WgpuApplication {
             surface,
@@ -469,7 +500,16 @@ impl<'a> WgpuApplication<'a> {
         Self::init(instance, surface, width, height).await
     }
 
-    pub fn render(&mut self) {
+    fn draw_objects(&mut self, rpass: &mut wgpu::RenderPass<'_>) {
+        let vertex_buffer = Self::create_vertex_buffer(&self.device, &self.vertices);
+        rpass.set_pipeline(&self.render_pipeline);
+        rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
+        rpass.set_bind_group(1, &self.diffuse_bind_group, &[]);
+        rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
+        rpass.draw(0..self.vertices.len() as u32, 0..1);
+    }
+
+    pub fn render(&mut self, render_objects: Arc<Vec<RenderObject>>) {
         let frame = self
             .surface
             .get_current_texture()
@@ -477,7 +517,6 @@ impl<'a> WgpuApplication<'a> {
         let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let vertex_buffer = Self::create_vertex_buffer(&self.device, &self.vertices);
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -496,11 +535,7 @@ impl<'a> WgpuApplication<'a> {
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
-            rpass.set_pipeline(&self.render_pipeline);
-            rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            rpass.set_bind_group(1, &self.diffuse_bind_group, &[]);
-            rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            rpass.draw(0..self.vertices.len() as u32, 0..1);
+            self.draw_objects(&mut rpass);
         }
 
         self.queue.submit(Some(encoder.finish()));
@@ -533,22 +568,12 @@ impl<'a> WgpuApplication<'a> {
     fn reconfigure_surface_size(&mut self) {
         self.config.width = self.width;
         self.config.height = self.height;
-        let ortho = cgmath::ortho(
-            0.0,
-            self.width as f32,
-            self.height as f32,
-            0.0, // Y軸下向きの場合
-            -1.0,
-            1.0,
-        );
+        let ortho = cgmath::ortho(0.0, self.width as f32, self.height as f32, 0.0, -1.0, 1.0);
         let uniforms = Uniforms {
             ortho: ortho.into(),
         };
-        self.queue.write_buffer(
-            &self.uniform_buffer, // 作成済みのuniformバッファ
-            0,                    // オフセット
-            bytemuck::cast_slice(&[uniforms]),
-        );
+        self.queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[uniforms]));
         self.surface.configure(&self.device, &self.config);
     }
 }

@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
 
 use wgpu::WgpuApplication;
 use winit::{
@@ -7,20 +7,25 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
-use zintl::app::App;
+use zintl::{app::App, render::RenderObject};
 
+mod render_object;
 mod wgpu;
 
 pub struct Application<'a> {
+    root: App,
     wgpu: Option<WgpuApplication<'a>>,
     window: Option<Arc<Window>>,
+    render_objects: Arc<Vec<RenderObject>>,
 }
 
 impl<'a> Application<'a> {
-    pub fn new() -> Self {
+    pub fn new(app: App) -> Self {
         Self {
+            root: app,
             wgpu: None,
             window: None,
+            render_objects: Arc::new(vec![]),
         }
     }
 }
@@ -51,7 +56,7 @@ impl<'a> ApplicationHandler for Application<'a> {
             }
             WindowEvent::RedrawRequested => {
                 if let Some(wgpu) = &mut self.wgpu {
-                    wgpu.render();
+                    wgpu.render(self.render_objects.clone());
                 }
                 // Redraw the application.
                 //
@@ -81,15 +86,8 @@ impl<'a> ApplicationHandler for Application<'a> {
 pub fn run_app(app: App) {
     let event_loop = EventLoop::new().unwrap();
 
-    // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't
-    // dispatched any events. This is ideal for games and similar applications.
-    event_loop.set_control_flow(ControlFlow::Poll);
-
-    // ControlFlow::Wait pauses the event loop if no events are available to process.
-    // This is ideal for non-game applications that only update in response to user
-    // input, and uses significantly less power/CPU time than ControlFlow::Poll.
     event_loop.set_control_flow(ControlFlow::Wait);
 
-    let mut app = Application::new();
-    event_loop.run_app(&mut app);
+    let mut w_app = Application::new(app);
+    let _ = event_loop.run_app(&mut w_app);
 }

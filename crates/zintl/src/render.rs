@@ -1,4 +1,4 @@
-use std::default;
+use std::cell::RefCell;
 
 #[derive(Debug, Clone)]
 pub enum Shape {
@@ -47,6 +47,7 @@ pub struct RenderObject {
     content: RenderContent,
     position: Position,
     metrics: Metrics,
+    children: RefCell<Vec<RenderObject>>,
 }
 
 impl RenderObject {
@@ -55,6 +56,11 @@ impl RenderObject {
             content,
             position,
             metrics,
+            children: Vec::new().into(),
         }
+    }
+
+    pub fn add_child(&self, child: RenderObject) {
+        self.children.borrow_mut().push(child);
     }
 }
