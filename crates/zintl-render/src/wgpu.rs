@@ -14,6 +14,33 @@ use pathfinder_geometry::transform2d::Transform2F;
 use pathfinder_geometry::vector::{Vector2F, Vector2I};
 use zintl::render::RenderObject;
 
+use std::collections::HashMap;
+
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Vertex {
+    pub position: [f32; 2],
+    pub tex_coords: [f32; 2],
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Uniforms {
+    pub ortho: [[f32; 4]; 4],
+}
+
+pub struct Mesh {
+    pub vertices: Vec<Vertex>,
+    pub indices: Vec<u32>,
+    pub texture_id: usize,
+}
+
+pub struct Texture {}
+
+pub struct Renderer {
+    textures: HashMap<usize, Texture>,
+}
+
 const SRC: &str = r###"
 
 struct Uniforms {
@@ -58,19 +85,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return textureSample(t_diffuse, s_diffuse, in.tex_coords);
 }
 "###;
-
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct Vertex {
-    position: [f32; 2],
-    tex_coords: [f32; 2],
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Uniforms {
-    pub ortho: [[f32; 4]; 4],
-}
 
 pub struct WgpuApplication<'a> {
     surface: wgpu::Surface<'a>,

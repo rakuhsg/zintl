@@ -9,6 +9,7 @@ use winit::{
 };
 use zintl::{app::App, render::RenderObject};
 
+mod render;
 mod render_object;
 mod wgpu;
 

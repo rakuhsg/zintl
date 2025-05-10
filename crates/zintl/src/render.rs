@@ -17,9 +17,10 @@ pub enum RenderContent {
 #[derive(Debug, Clone, Default)]
 pub enum Metrics {
     #[default]
+    /// Automatically determine the size based on content or context
     Auto,
+    /// Fixed width and height specified as (width, height)
     Fixed(f32, f32),
-    Absolute(f32, f32),
 }
 
 #[derive(Debug, Clone, Default)]
@@ -44,10 +45,10 @@ impl Position {
 
 #[derive(Debug, Clone, Default)]
 pub struct RenderObject {
-    content: RenderContent,
-    position: Position,
-    metrics: Metrics,
-    children: RefCell<Vec<RenderObject>>,
+    pub content: RenderContent,
+    pub position: Position,
+    pub metrics: Metrics,
+    pub children: RefCell<Vec<RenderObject>>,
 }
 
 impl RenderObject {
