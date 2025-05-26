@@ -48,7 +48,7 @@ pub trait View: Sized {
 
 /// A component uses other components to compose its view.
 pub trait Composable: Sized {
-    fn compose_view(&mut self) -> impl View;
+    fn view(&mut self) -> impl View;
 }
 
 /// A view that implements the [`Composable`] trait.
@@ -73,7 +73,7 @@ impl<T: ComposableView> View for T {
 }
 
 impl<T: ComposableView> Composable for T {
-    fn compose_view(&mut self) -> impl View {
+    fn view(&mut self) -> impl View {
         self.compose()
     }
 }
