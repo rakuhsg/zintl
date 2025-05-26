@@ -2635,4 +2635,12 @@ dependencies = [
  "wgpu",
  "winit",
  "zintl",
+ "zintl-render-math",
+]
+
+[[package]]
+name = "zintl-render-math"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
 ]

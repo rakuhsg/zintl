@@ -7,26 +7,31 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
-use zintl::{app::App, render::RenderObject};
+use zintl::{app::App, render::RenderContent};
 
+mod mesh;
 mod render;
 mod render_object;
+mod tessellator;
+mod text;
+mod texture;
 mod wgpu;
 
 pub struct Application<'a> {
     root: App,
     wgpu: Option<WgpuApplication<'a>>,
     window: Option<Arc<Window>>,
-    render_objects: Arc<Vec<RenderObject>>,
+    render_contents: Vec<RenderContent>,
 }
 
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
+        let c = app.get_render_object().children.borrow().clone()[0].content;
         Self {
             root: app,
             wgpu: None,
             window: None,
-            render_objects: Arc::new(vec![]),
+            render_contents: vec![c],
         }
     }
 }
@@ -49,6 +54,17 @@ impl<'a> ApplicationHandler for Application<'a> {
         };
     }
 
+    fn render(&mut self) -> Vec<mesh::Mesh> {
+        while let Some(c) = self.render_contents.pop() {
+            if let Some(wgpu) = &mut self.wgpu {
+                match c {
+                    RenderContent::Text(text) => {
+                        let mesh = self.text_tessellator.
+            }
+        }
+        vec![]
+    }
+
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
@@ -56,9 +72,7 @@ impl<'a> ApplicationHandler for Application<'a> {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
-                if let Some(wgpu) = &mut self.wgpu {
-                    wgpu.render(self.render_objects.clone());
-                }
+                if let Some(wgpu) = &mut self.wgpu {}
                 // Redraw the application.
                 //
                 // It's preferable for applications that do not render continuously to render in

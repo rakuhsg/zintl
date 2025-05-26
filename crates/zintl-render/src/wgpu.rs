@@ -12,9 +12,11 @@ use font_kit::hinting::HintingOptions;
 use font_kit::source::SystemSource;
 use pathfinder_geometry::transform2d::Transform2F;
 use pathfinder_geometry::vector::{Vector2F, Vector2I};
-use zintl::render::RenderObject;
+use zintl::render::{RenderContent, Shape};
 
 use std::collections::HashMap;
+
+use crate::text::*;
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -29,13 +31,18 @@ pub struct Uniforms {
     pub ortho: [[f32; 4]; 4],
 }
 
+#[repr(C)]
+#[derive(Clone, Default)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
     pub texture_id: usize,
 }
 
-pub struct Texture {}
+pub struct Texture {
+    native_texture: wgpu::Texture,
+    bind_group: wgpu::BindGroup,
+}
 
 pub struct Renderer {
     textures: HashMap<usize, Texture>,
@@ -86,6 +93,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 }
 "###;
 
+/// A instance of a WGPU renderer
 pub struct WgpuApplication<'a> {
     surface: wgpu::Surface<'a>,
     device: wgpu::Device,
@@ -97,10 +105,12 @@ pub struct WgpuApplication<'a> {
     height: u32,
     render_pipeline: wgpu::RenderPipeline,
     vertices: Vec<Vertex>,
+    textures: HashMap<usize, Texture>,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
-    ortho_matrix: Matrix4<f32>,
     diffuse_bind_group: wgpu::BindGroup,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
+    text_tessellator: TextTessellator,
 }
 
 /// Error type for WgpuApplication
@@ -208,6 +218,7 @@ impl<'a> WgpuApplication<'a> {
         width: u32,
         height: u32,
     ) -> WgpuApplicationResult<Self> {
+        let text_tessellator = TextTessellator::new();
         let adapter = Self::init_adapter(&instance, &surface).await?;
 
         let (device, queue) = match adapter
@@ -506,8 +517,10 @@ impl<'a> WgpuApplication<'a> {
             vertices,
             uniform_buffer,
             uniform_bind_group,
-            ortho_matrix,
             diffuse_bind_group,
+            textures: HashMap::new(),
+            texture_bind_group_layout,
+            text_tessellator,
         })
     }
 
@@ -529,16 +542,29 @@ impl<'a> WgpuApplication<'a> {
         Self::init(instance, surface, width, height).await
     }
 
-    fn draw_objects(&mut self, rpass: &mut wgpu::RenderPass<'_>) {
+    // TODO
+    fn draw_mesh(&mut self, mesh: &Mesh, rpass: &mut wgpu::RenderPass<'_>) {
+        let texture = self
+            .textures
+            .get(&mesh.texture_id)
+            .expect("Texture not found");
+        let vertex_buffer = Self::create_vertex_buffer(&self.device, &mesh.vertices);
+        rpass.set_bind_group(1, &texture.bind_group, &[]);
+        rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
+        rpass.draw(0..mesh.vertices.len() as u32, 0..1);
+    }
+
+    fn draw_meshes(&mut self, rpass: &mut wgpu::RenderPass<'_>) {
         let vertex_buffer = Self::create_vertex_buffer(&self.device, &self.vertices);
         rpass.set_pipeline(&self.render_pipeline);
         rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-        rpass.set_bind_group(1, &self.diffuse_bind_group, &[]);
+
+        /*rpass.set_bind_group(1, &self.diffuse_bind_group, &[]);
         rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-        rpass.draw(0..self.vertices.len() as u32, 0..1);
+        rpass.draw(0..self.vertices.len() as u32, 0..1);*/
     }
 
-    pub fn render(&mut self, render_objects: Arc<Vec<RenderObject>>) {
+    pub fn render(&mut self) {
         let frame = self
             .surface
             .get_current_texture()
@@ -604,5 +630,11 @@ impl<'a> WgpuApplication<'a> {
         self.queue
             .write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[uniforms]));
         self.surface.configure(&self.device, &self.config);
+    }
+
+    pub fn register_texture(&mut self, texture: Texture) -> usize {
+        let id = self.textures.len();
+        self.textures.insert(id, texture);
+        id
     }
 }

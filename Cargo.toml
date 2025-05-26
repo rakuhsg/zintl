@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/zintl", "crates/zintl-render"]
+members = ["crates/zintl", "crates/zintl-render", "crates/zintl-render-math"]
 
 [workspace.package]
 authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
@@ -8,3 +8,5 @@ authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
 [workspace.dependencies]
 zintl = { path = "crates/zintl" }
 zintl-render = { path = "crates/zintl-render" }
+zintl-render-math = { path = "crates/zintl-render-math" }
+bytemuck = "1.23"

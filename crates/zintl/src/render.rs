@@ -3,6 +3,7 @@ use std::cell::RefCell;
 #[derive(Debug, Clone)]
 pub enum Shape {
     Rectangle,
+    Text { text: String, font_size: f32 },
 }
 
 #[derive(Debug, Clone, Default)]

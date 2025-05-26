@@ -1,0 +1,8 @@
+[package]
+name = "zintl-render-math"
+version = "0.1.0"
+edition = "2024"
+authors.workspace = true
+
+[dependencies]
+bytemuck.workspace = true
