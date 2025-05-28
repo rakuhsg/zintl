@@ -1,4 +1,4 @@
-# Zintl - Building GUI with Rust
+# Zintl.rs - Building GUI with Rust
 
 | [Source code](https://github.com/CanvasPads/Zintl) | [Crates.io](https://crates.io/crates/zintl) | [Docs](https://docs.rs/zintl/latest/zintl) |
 
