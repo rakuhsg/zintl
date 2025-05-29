@@ -8,31 +8,93 @@ use winit::{
     window::{Window, WindowId},
 };
 use zintl::{app::App, render::RenderContent};
+use zintl_render_math::Point;
 
-mod mesh;
+pub mod mesh;
 mod render;
 mod render_object;
 mod tessellator;
-mod text;
+pub mod text;
 mod texture;
-mod wgpu;
+pub mod wgpu;
 
+#[allow(unused)]
+#[derive(Debug)]
 pub struct Application<'a> {
     root: App,
     wgpu: Option<WgpuApplication<'a>>,
     window: Option<Arc<Window>>,
     render_contents: Vec<RenderContent>,
+    tessellator: tessellator::Tessellator,
+    system_font: text::FamilyProperties,
+    family_manager: text::FamilyManager,
 }
 
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
-        let c = app.get_render_object().children.borrow().clone()[0].content;
+        let mut family_manager = text::FamilyManager::new();
+        let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
+        family_manager.load_family("Inter".to_string(), fam);
         Self {
             root: app,
             wgpu: None,
             window: None,
-            render_contents: vec![c],
+            render_contents: vec![RenderContent::Text("hi".to_string())],
+            tessellator: tessellator::Tessellator::new(),
+            system_font: text::FamilyProperties {
+                name: "Inter".to_string(),
+                scale_string: "16.0".to_string(),
+            },
+            family_manager,
         }
+    }
+}
+
+impl<'a> Application<'a> {
+    pub fn render(&mut self) {
+        let wgpu = match &mut self.wgpu {
+            Some(wgpu) => wgpu,
+            None => return,
+        };
+        let meshes = self
+            .render_contents
+            .iter()
+            .map(|content| match content {
+                RenderContent::Text(text) => {
+                    let family = self
+                        .family_manager
+                        .get_family(self.system_font.clone())
+                        .expect("Failed to get system font family");
+                    let glyphs = text
+                        .chars()
+                        .map(|c| family.get_glyph(c))
+                        .collect::<Vec<_>>();
+
+                    let mut x = 0.0;
+                    let meshes = glyphs
+                        .iter()
+                        .map(|glyph| {
+                            x += glyph.width as f32;
+                            glyph.rect.to_mesh(Point::new(x, 0.0), 0)
+                        })
+                        .collect::<Vec<_>>();
+
+                    let pixels = family.get_atlas_pixels();
+                    let size = family.get_atlas_size();
+
+                    let _ = wgpu.register_texture_with_id(0, pixels, size.0 as u32, size.1 as u32);
+
+                    mesh::Mesh {
+                        vertices: vec![],
+                        indices: vec![],
+                        texture_id: None,
+                        children: meshes,
+                    }
+                }
+                _ => mesh::Mesh::default(),
+            })
+            .collect::<Vec<_>>();
+        wgpu.draw(meshes);
     }
 }
 
@@ -54,39 +116,15 @@ impl<'a> ApplicationHandler for Application<'a> {
         };
     }
 
-    fn render(&mut self) -> Vec<mesh::Mesh> {
-        while let Some(c) = self.render_contents.pop() {
-            if let Some(wgpu) = &mut self.wgpu {
-                match c {
-                    RenderContent::Text(text) => {
-                        let mesh = self.text_tessellator.
-            }
-        }
-        vec![]
-    }
-
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
-                if let Some(wgpu) = &mut self.wgpu {}
-                // Redraw the application.
-                //
-                // It's preferable for applications that do not render continuously to render in
-                // this event rather than in AboutToWait, since rendering in here allows
-                // the program to gracefully handle redraws requested by the OS.
-
-                // Draw.
-
-                // Queue a RedrawRequested event.
-                //
-                // You only need to call this if you've determined that you need to redraw in
-                // applications which do not always need to. Applications that redraw continuously
-                // can render here instead.
-                //self.window.as_ref().unwrap().request_redraw();
+                self.render();
+                event_loop.set_control_flow(ControlFlow::Wait);
             }
             WindowEvent::Resized(size) => {
                 if let Some(wgpu) = &mut self.wgpu {

@@ -10,3 +10,4 @@ zintl = { path = "crates/zintl" }
 zintl-render = { path = "crates/zintl-render" }
 zintl-render-math = { path = "crates/zintl-render-math" }
 bytemuck = "1.23"
+cgmath = "0.18"

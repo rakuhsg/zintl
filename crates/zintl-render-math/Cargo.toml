@@ -6,3 +6,4 @@ authors.workspace = true
 
 [dependencies]
 bytemuck.workspace = true
+cgmath.workspace = true

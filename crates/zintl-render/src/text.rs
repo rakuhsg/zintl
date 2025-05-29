@@ -73,16 +73,21 @@ impl Atlas {
     }
 
     /// Returns a reference to the pixel data of the atlas.
-    pub fn pixels(&mut self) -> &mut [u8] {
+    pub fn pixels_mut_ref(&mut self) -> &mut [u8] {
         &mut self.pixels
+    }
+
+    pub fn pixels(&self) -> Vec<u8> {
+        self.pixels.clone()
     }
 }
 
 /// A single glyph data with size and coordinates.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Glyph {
     /// ab_glyph glyph id.
     pub id: ab_glyph::GlyphId,
+    // TODO: Rename to advance
     /// The width of the glyph in pixels.
     pub width: usize,
     pub rect: Rect,
@@ -159,14 +164,25 @@ impl Family {
 
         Glyph { id, width, rect }
     }
+
+    pub fn get_atlas_pixels(&self) -> Vec<u8> {
+        self.atlas.lock().unwrap().pixels()
+    }
+
+    pub fn get_atlas_size(&self) -> (usize, usize) {
+        let atlas = self.atlas.lock().unwrap();
+        (atlas.pixels_per_column, atlas.height)
+    }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Default, PartialEq, Hash, Eq)]
 pub struct FamilyProperties {
     pub name: String,
-    pub size: f32,
+    /// f32 does not implement Hash, so we use a String instead.
+    pub scale_string: String,
 }
 
+#[derive(Clone, Debug)]
 pub struct FamilyManager {
     pub families: HashMap<String, ab_glyph::FontArc>,
     pub sized_families: HashMap<FamilyProperties, Family>,
@@ -181,24 +197,26 @@ impl FamilyManager {
     }
 
     pub fn load_family(&mut self, name: String, data: Vec<u8>) {
-        let family = ab_glyph::FontArc::try_from_slice(&data).unwrap();
+        let family = ab_glyph::FontVec::try_from_vec(data)
+            .map(ab_glyph::FontArc::from)
+            .unwrap();
         self.families.insert(name.clone(), family.clone());
     }
 
     pub fn get_family(&mut self, family: FamilyProperties) -> Option<&Family> {
-        match self.sized_families.get(&family) {
-            Some(f) => Some(f),
-            None => {
-                if let Some(ab_font) = self.families.get(&family.name) {
-                    let scale = Pixel::new(family.size);
-                    let new_family = Family::new(ab_font.clone(), family.name.clone(), scale);
-                    self.sized_families.insert(family.clone(), new_family);
-                    self.sized_families.get(&family)
-                } else {
-                    None
-                }
+        let f = self.sized_families.entry(family.clone()).or_insert({
+            if let Some(ab_font) = self.families.get(&family.name) {
+                let scale = family
+                    .scale_string
+                    .parse::<f32>()
+                    .expect("Invalid scale string");
+                let new_family = Family::new(ab_font.clone(), family.name.clone(), scale);
+                new_family
+            } else {
+                return None;
             }
-        }
+        });
+        Some(f)
     }
 }
 
@@ -208,6 +226,6 @@ pub struct TextTessellator {
 
 impl TextTessellator {
     pub fn new(font_manager: Arc<FamilyManager>) -> Self {
-        TextTesselator { font_manager }
+        TextTessellator { font_manager }
     }
 }

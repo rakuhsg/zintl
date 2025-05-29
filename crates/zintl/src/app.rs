@@ -1,5 +1,6 @@
 use crate::render::{Metrics, Position, RenderContent, RenderObject};
 
+#[derive(Clone, Debug)]
 pub struct App {
     root: RenderObject,
 }
@@ -40,6 +41,8 @@ impl Context {
 pub trait View: Sized {
     fn get_context(&self) -> &Context;
 
+    // TODO
+    #[allow(unused)]
     fn padding(self, top: f32, bottom: f32, left: f32, right: f32) -> Self {
         self.get_context().set_style_property();
         self
@@ -121,6 +124,8 @@ impl ComposableView for Stack {
 }
 
 pub struct Label {
+    // TODO
+    #[allow(dead_code)]
     text: String,
     context: Context,
 }

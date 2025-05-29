@@ -18,10 +18,11 @@ pub struct Uniforms {
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
-    pub texture_id: usize,
+    pub texture_id: Option<usize>,
+    pub children: Vec<Mesh>,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Rect {
     /// The size on the screen
     pub size: Vec2,
@@ -39,7 +40,7 @@ impl Rect {
     }
 
     pub fn from_tex_coords(tex_coords: Point) -> Self {
-        Self::new(Vec2::zero(), tex_coords)
+        Self::new(Vec2::new(0., 0.), tex_coords)
     }
 
     pub fn to_mesh(&self, coords: Point, texture_id: usize) -> Mesh {
@@ -66,7 +67,8 @@ impl Rect {
                 },
             ],
             indices: vec![0, 1, 2, 0, 2, 3],
-            texture_id,
+            texture_id: Some(texture_id),
+            children: Vec::new(),
         }
     }
 }
