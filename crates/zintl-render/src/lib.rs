@@ -39,11 +39,11 @@ impl<'a> Application<'a> {
             root: app,
             wgpu: None,
             window: None,
-            render_contents: vec![RenderContent::Text("hi".to_string())],
+            render_contents: vec![RenderContent::Text("Gordon Ramsay".to_string())],
             tessellator: tessellator::Tessellator::new(),
             system_font: text::FamilyProperties {
                 name: "Inter".to_string(),
-                scale_string: "16.0".to_string(),
+                scale_string: "32.0".to_string(),
             },
             family_manager,
         }
@@ -81,6 +81,13 @@ impl<'a> Application<'a> {
 
                     let pixels = family.get_atlas_pixels();
                     let size = family.get_atlas_size();
+
+                    println!(
+                        "Rendering text: {} with {} glyphs, size: {:?}",
+                        text,
+                        glyphs.len(),
+                        size
+                    );
 
                     let _ = wgpu.register_texture_with_id(0, pixels, size.0 as u32, size.1 as u32);
 

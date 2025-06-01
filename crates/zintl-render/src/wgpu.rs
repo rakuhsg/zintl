@@ -245,6 +245,7 @@ impl<'a> WgpuApplication<'a> {
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 entries: &[
+                    // Texture binding
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
                         visibility: wgpu::ShaderStages::FRAGMENT,
@@ -255,6 +256,7 @@ impl<'a> WgpuApplication<'a> {
                         },
                         count: None,
                     },
+                    // Sampler binding
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
@@ -373,16 +375,18 @@ impl<'a> WgpuApplication<'a> {
 
     // TODO
     fn draw_mesh(&mut self, mesh: Mesh, rpass: &mut wgpu::RenderPass<'_>) {
-        if let Some(texture_id) = mesh.texture_id {
-            let texture = self.textures.get(&texture_id).expect("Texture not found");
+        if !mesh.vertices.is_empty() || !mesh.indices.is_empty() {
+            if let Some(texture_id) = mesh.texture_id {
+                let texture = self.textures.get(&texture_id).expect("Texture not found");
 
-            rpass.set_bind_group(1, &texture.bind_group, &[]);
+                rpass.set_bind_group(1, &texture.bind_group, &[]);
+            }
+            let vertex_buffer = Self::create_vertex_buffer(&self.device, &mesh.vertices);
+            let index_buffer = Self::create_index_buffer(&self.device, &mesh.indices);
+            rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
+            rpass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+            rpass.draw_indexed(0..mesh.indices.len() as u32, 0, 0..1);
         }
-        let vertex_buffer = Self::create_vertex_buffer(&self.device, &mesh.vertices);
-        let index_buffer = Self::create_index_buffer(&self.device, &mesh.indices);
-        rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-        rpass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-        rpass.draw_indexed(0..mesh.indices.len() as u32, 0, 0..1);
 
         if !mesh.children.is_empty() {
             for child in mesh.children {

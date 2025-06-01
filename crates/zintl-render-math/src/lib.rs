@@ -16,6 +16,25 @@ impl Point {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct PointUSize {
+    pub x: usize,
+    pub y: usize,
+}
+
+impl PointUSize {
+    pub fn new(x: usize, y: usize) -> Self {
+        PointUSize { x, y }
+    }
+}
+
+impl From<PointUSize> for Point {
+    fn from(point: PointUSize) -> Self {
+        Point::new(point.x as f32, point.y as f32)
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,
