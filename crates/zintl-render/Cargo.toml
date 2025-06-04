@@ -4,13 +4,18 @@ version = "0.1.0"
 edition = "2024"
 authors.workspace = true
 
+[features]
+wgpu = []
+default = ["wgpu"]
+
 [dependencies]
 zintl.workspace = true
+zintl-render-math.workspace = true
 winit = "0.30"
 wgpu = "25"
 pollster = "0.3"
 font-kit = "0.14"
 pathfinder_geometry = "0.5"
-cgmath = "0.18"
-bytemuck = "1.23"
+bytemuck.workspace = true
 ab_glyph = "0.2.29"
+cgmath.workspace = true

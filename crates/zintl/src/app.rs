@@ -1,5 +1,6 @@
 use crate::render::{Metrics, Position, RenderContent, RenderObject};
 
+#[derive(Clone, Debug)]
 pub struct App {
     root: RenderObject,
 }
@@ -40,6 +41,8 @@ impl Context {
 pub trait View: Sized {
     fn get_context(&self) -> &Context;
 
+    // TODO
+    #[allow(unused)]
     fn padding(self, top: f32, bottom: f32, left: f32, right: f32) -> Self {
         self.get_context().set_style_property();
         self
@@ -48,7 +51,7 @@ pub trait View: Sized {
 
 /// A component uses other components to compose its view.
 pub trait Composable: Sized {
-    fn compose_view(&mut self) -> impl View;
+    fn view(&mut self) -> impl View;
 }
 
 /// A view that implements the [`Composable`] trait.
@@ -57,6 +60,11 @@ pub trait ComposableView: Sized {
     fn compose(&mut self) -> impl View;
 
     fn children<const N: usize>(self, children: [impl View; N]) -> Self {
+        for child in children {
+            self.context()
+                .render_object
+                .add_child(child.get_context().render());
+        }
         self
     }
 }
@@ -68,7 +76,7 @@ impl<T: ComposableView> View for T {
 }
 
 impl<T: ComposableView> Composable for T {
-    fn compose_view(&mut self) -> impl View {
+    fn view(&mut self) -> impl View {
         self.compose()
     }
 }
@@ -116,6 +124,8 @@ impl ComposableView for Stack {
 }
 
 pub struct Label {
+    // TODO
+    #[allow(dead_code)]
     text: String,
     context: Context,
 }

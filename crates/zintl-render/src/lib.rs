@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
 
 use wgpu::WgpuApplication;
 use winit::{
@@ -7,21 +7,86 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
-use zintl::app::App;
+use zintl::{app::App, render::RenderContent};
+use zintl_render_math::Point;
 
-mod wgpu;
+pub mod mesh;
+mod render;
+mod render_object;
+mod tessellator;
+pub mod text;
+mod texture;
+pub mod wgpu;
 
+#[allow(unused)]
+#[derive(Debug)]
 pub struct Application<'a> {
+    root: App,
     wgpu: Option<WgpuApplication<'a>>,
     window: Option<Arc<Window>>,
+    render_contents: Vec<RenderContent>,
+    tessellator: tessellator::Tessellator,
+    system_font: text::FamilyProperties,
+    family_manager: text::FamilyManager,
+    typesetter: text::Typesetter,
 }
 
 impl<'a> Application<'a> {
-    pub fn new() -> Self {
+    pub fn new(app: App) -> Self {
+        let mut family_manager = text::FamilyManager::new();
+        let fam = include_bytes!("../../../assets/NotoSansJP/NotoSansJP-Regular.ttf").to_vec();
+        family_manager.load_family("Inter".to_string(), fam);
         Self {
+            root: app,
             wgpu: None,
             window: None,
+            render_contents: vec![RenderContent::Text("Text".to_string())],
+            tessellator: tessellator::Tessellator::new(),
+            system_font: text::FamilyProperties {
+                name: "Inter".to_string(),
+                scale_string: "32.0".to_string(),
+            },
+            family_manager,
+            typesetter: text::Typesetter::new(),
         }
+    }
+}
+
+impl<'a> Application<'a> {
+    pub fn render(&mut self) {
+        let wgpu = match &mut self.wgpu {
+            Some(wgpu) => wgpu,
+            None => return,
+        };
+        let meshes = self
+            .render_contents
+            .iter()
+            .map(|content| match content {
+                RenderContent::Text(text) => {
+                    let family = self
+                        .family_manager
+                        .get_family(self.system_font.clone())
+                        .expect("Failed to get system font family");
+
+                    let atlas_size = family.get_atlas_size();
+                    let pixels = family.get_atlas_pixels();
+                    let _ = wgpu.register_texture_with_id(
+                        0,
+                        pixels,
+                        atlas_size.0 as u32,
+                        atlas_size.1 as u32,
+                    );
+
+                    let galley = self
+                        .typesetter
+                        .compose(text, &family, Point::new(0.0, 120.0));
+                    let meshes = galley.to_meshes(atlas_size.into());
+                    mesh::Mesh::from_children(meshes)
+                }
+                _ => mesh::Mesh::default(),
+            })
+            .collect::<Vec<_>>();
+        wgpu.draw(meshes);
     }
 }
 
@@ -43,30 +108,15 @@ impl<'a> ApplicationHandler for Application<'a> {
         };
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
                 println!("The close button was pressed; stopping");
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
-                if let Some(wgpu) = &mut self.wgpu {
-                    wgpu.render();
-                }
-                // Redraw the application.
-                //
-                // It's preferable for applications that do not render continuously to render in
-                // this event rather than in AboutToWait, since rendering in here allows
-                // the program to gracefully handle redraws requested by the OS.
-
-                // Draw.
-
-                // Queue a RedrawRequested event.
-                //
-                // You only need to call this if you've determined that you need to redraw in
-                // applications which do not always need to. Applications that redraw continuously
-                // can render here instead.
-                //self.window.as_ref().unwrap().request_redraw();
+                self.render();
+                event_loop.set_control_flow(ControlFlow::Wait);
             }
             WindowEvent::Resized(size) => {
                 if let Some(wgpu) = &mut self.wgpu {
@@ -81,15 +131,8 @@ impl<'a> ApplicationHandler for Application<'a> {
 pub fn run_app(app: App) {
     let event_loop = EventLoop::new().unwrap();
 
-    // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't
-    // dispatched any events. This is ideal for games and similar applications.
-    event_loop.set_control_flow(ControlFlow::Poll);
-
-    // ControlFlow::Wait pauses the event loop if no events are available to process.
-    // This is ideal for non-game applications that only update in response to user
-    // input, and uses significantly less power/CPU time than ControlFlow::Poll.
     event_loop.set_control_flow(ControlFlow::Wait);
 
-    let mut app = Application::new();
-    event_loop.run_app(&mut app);
+    let mut w_app = Application::new(app);
+    let _ = event_loop.run_app(&mut w_app);
 }
