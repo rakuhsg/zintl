@@ -9,11 +9,13 @@ use std::collections::HashMap;
 
 use crate::mesh::{Mesh, Uniforms, Vertex};
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Texture {
-    #[allow(dead_code)]
     native_texture: wgpu::Texture,
     bind_group: wgpu::BindGroup,
+    width: u32,
+    height: u32,
 }
 
 const SRC: &str = r###"
@@ -581,6 +583,8 @@ impl<'a> WgpuApplication<'a> {
         let texture = Texture {
             native_texture: texture,
             bind_group,
+            width,
+            height,
         };
 
         self.textures.insert(id, texture);

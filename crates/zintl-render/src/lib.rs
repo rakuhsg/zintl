@@ -28,24 +28,26 @@ pub struct Application<'a> {
     tessellator: tessellator::Tessellator,
     system_font: text::FamilyProperties,
     family_manager: text::FamilyManager,
+    typesetter: text::Typesetter,
 }
 
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
         let mut family_manager = text::FamilyManager::new();
-        let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
+        let fam = include_bytes!("../../../assets/NotoSansJP/NotoSansJP-Regular.ttf").to_vec();
         family_manager.load_family("Inter".to_string(), fam);
         Self {
             root: app,
             wgpu: None,
             window: None,
-            render_contents: vec![RenderContent::Text("Gordon Ramsay".to_string())],
+            render_contents: vec![RenderContent::Text("Text".to_string())],
             tessellator: tessellator::Tessellator::new(),
             system_font: text::FamilyProperties {
                 name: "Inter".to_string(),
                 scale_string: "32.0".to_string(),
             },
             family_manager,
+            typesetter: text::Typesetter::new(),
         }
     }
 }
@@ -65,38 +67,21 @@ impl<'a> Application<'a> {
                         .family_manager
                         .get_family(self.system_font.clone())
                         .expect("Failed to get system font family");
-                    let glyphs = text
-                        .chars()
-                        .map(|c| family.get_glyph(c))
-                        .collect::<Vec<_>>();
 
-                    let mut x = 0.0;
-                    let meshes = glyphs
-                        .iter()
-                        .map(|glyph| {
-                            x += glyph.width as f32;
-                            glyph.rect.to_mesh(Point::new(x, 0.0), 0)
-                        })
-                        .collect::<Vec<_>>();
-
+                    let atlas_size = family.get_atlas_size();
                     let pixels = family.get_atlas_pixels();
-                    let size = family.get_atlas_size();
-
-                    println!(
-                        "Rendering text: {} with {} glyphs, size: {:?}",
-                        text,
-                        glyphs.len(),
-                        size
+                    let _ = wgpu.register_texture_with_id(
+                        0,
+                        pixels,
+                        atlas_size.0 as u32,
+                        atlas_size.1 as u32,
                     );
 
-                    let _ = wgpu.register_texture_with_id(0, pixels, size.0 as u32, size.1 as u32);
-
-                    mesh::Mesh {
-                        vertices: vec![],
-                        indices: vec![],
-                        texture_id: None,
-                        children: meshes,
-                    }
+                    let galley = self
+                        .typesetter
+                        .compose(text, &family, Point::new(0.0, 120.0));
+                    let meshes = galley.to_meshes(atlas_size.into());
+                    mesh::Mesh::from_children(meshes)
                 }
                 _ => mesh::Mesh::default(),
             })

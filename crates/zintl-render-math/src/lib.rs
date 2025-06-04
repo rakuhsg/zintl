@@ -66,6 +66,12 @@ impl Vec2 {
     }
 }
 
+impl From<(usize, usize)> for Vec2 {
+    fn from(tuple: (usize, usize)) -> Self {
+        Vec2::new(tuple.0 as f32, tuple.1 as f32)
+    }
+}
+
 /// Matrix 3x3
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]

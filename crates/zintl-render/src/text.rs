@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::mesh::Rect;
-use ab_glyph::Font;
+use crate::mesh::{Mesh, Rect};
+use ab_glyph::{Font, ScaleFont};
 use zintl_render_math::{Pixel, Point, PointUSize, Vec2};
 
 /// All of the rendered glyphs in a single atlas.
@@ -21,7 +21,7 @@ pub struct Atlas {
 impl Atlas {
     /// Creates a new `Atlas` with the specified width and height.
     pub fn new(initial_width: usize, initial_height: usize) -> Self {
-        let pixels = vec![255; initial_width * initial_height * 4];
+        let pixels = vec![0; initial_width * initial_height * 4];
         Atlas {
             height: initial_height,
             cursor: [0, 0],
@@ -93,15 +93,29 @@ impl Atlas {
     }
 }
 
+/// A rectangle and texture coordinates for a glyph.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct GlyphRect {
+    /// The horizontal offset from previous glyph.
+    pub x_offset: Pixel,
+    /// The vertical offset of the glyph. Also known as the line gap.
+    pub y_offset: Pixel,
+    /// The width of the glyph in pixels.
+    pub width: Pixel,
+    /// The height of the glyph in pixels.
+    pub height: Pixel,
+    /// Mesh bounds on the glyph rectangle. NOT FOR LAYOUTING.
+    pub bounds: Rect,
+    /// The texture coordinates of the glyph in the atlas.
+    pub texture_coords: Rect,
+}
+
 /// A single glyph data with size and coordinates.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Glyph {
     /// ab_glyph glyph id.
     pub id: ab_glyph::GlyphId,
-    // TODO: Rename to advance
-    /// The width of the glyph in pixels.
-    pub width: usize,
-    pub rect: Rect,
+    pub rect: GlyphRect,
 }
 
 /// A font family with a specific size.
@@ -113,30 +127,42 @@ pub struct Family {
     pub atlas: Arc<Mutex<Atlas>>,
     /// The scale factor for the font.
     pub scale: Pixel,
-    /// The offset for the font.
-    pub offset: f32,
+    pub height: f32,
+    /// https://docs.rs/ab_glyph/latest/ab_glyph/trait.Font.html#glyph-layout-concepts
+    pub ascent: f32,
+    /// https://docs.rs/ab_glyph/latest/ab_glyph/trait.Font.html#glyph-layout-concepts
+    pub descent: f32,
+    /// https://docs.rs/ab_glyph/latest/ab_glyph/trait.Font.html#glyph-layout-concepts
+    pub line_gap: f32,
     /// A cached list of glyphs in the atlas.
-    pub glyphs: HashMap<char, Glyph>,
+    pub glyphs: Arc<Mutex<HashMap<char, Glyph>>>,
 }
 
 impl Family {
     pub fn new(ab_font: ab_glyph::FontArc, family: String, scale: Pixel) -> Self {
         let atlas = Atlas::new(128, 32);
-        let offset = 0.0;
+        let scaled = ab_font.as_scaled(scale);
+        let height = scaled.height();
+        let line_gap = scaled.line_gap();
+        let ascent = scaled.ascent();
+        let descent = scaled.descent();
 
         Family {
             ab_font,
             family,
             atlas: Mutex::new(atlas).into(),
             scale,
-            offset,
-            glyphs: HashMap::new(),
+            height,
+            ascent,
+            descent,
+            line_gap,
+            glyphs: Mutex::new(HashMap::new()).into(),
         }
     }
 
     pub fn get_glyph(&self, c: char) -> Glyph {
-        println!("Getting glyph for: {}", c);
-        if let Some(glyph) = self.glyphs.get(&c) {
+        // TODO: Error handling
+        if let Some(glyph) = self.glyphs.lock().unwrap().get(&c) {
             return *glyph;
         }
 
@@ -150,41 +176,54 @@ impl Family {
         println!("scale: {}", self.scale);
 
         let g = id.with_scale_and_position(self.scale, ab_glyph::point(0.0, 0.0));
+        let scaled = self.ab_font.as_scaled(self.scale);
+        let advance = scaled.h_advance(id);
+        let side_bearing = scaled.h_side_bearing(id);
 
-        let (width, rect) = {
+        let rect = {
             if let Some(g) = self.ab_font.outline_glyph(g) {
-                let bounds = g.px_bounds();
-                println!("Glyph bounds: {:?}", bounds);
-                let width = bounds.width() as usize;
-                let height = bounds.height() as usize;
+                let px_bounds = g.px_bounds();
+                let px_width = px_bounds.width() as usize;
+                let px_height = px_bounds.height() as usize;
                 // base: the absolute position in the atlas where the glyph will be drawn.
-                let (min, max, atlas_width, pixels) = atlas.create_image(width, height);
+                let (atlas_min, atlas_max, atlas_width, pixels) =
+                    atlas.create_image(px_width, px_height);
 
                 g.draw(|x, y, c| {
                     let x = x as usize;
                     let y = y as usize;
-                    let start = (min.y + y) * atlas_width * 4 + (min.x + x) * 4;
+                    let start = (atlas_min.y + y) * atlas_width * 4 + (atlas_min.x + x) * 4;
                     pixels[start] = ((1. - c) * 255.) as u8; // R
                     pixels[start + 1] = ((1. - c) * 255.) as u8;
                     pixels[start + 2] = ((1. - c) * 255.) as u8;
                     pixels[start + 3] = (c * 255.) as u8;
                 });
 
-                (
-                    width,
-                    Rect::new(
-                        Vec2::new(width as f32, height as f32),
-                        atlas.normalize_coords(min),
-                        atlas.normalize_coords(max),
-                    ),
-                )
+                GlyphRect {
+                    x_offset: side_bearing,
+                    y_offset: self.line_gap,
+                    width: advance,
+                    height: self.height,
+                    bounds: Rect {
+                        min: Point::new(px_bounds.min.x, px_bounds.min.y),
+                        max: Point::new(px_bounds.max.x, px_bounds.max.y),
+                    },
+                    texture_coords: Rect::new(atlas_min.into(), atlas_max.into()),
+                }
             } else {
                 println!("Failed to get outline for glyph: {:?}", id);
                 return Glyph::default();
             }
         };
 
-        let glyph = Glyph { id, width, rect };
+        let glyph = Glyph { id, rect };
+
+        println!("Glyph: {} {:?}", c, glyph);
+
+        // Cache the glyph
+        // TODO: Error handling
+        self.glyphs.lock().unwrap().insert(c, glyph);
+
         glyph
     }
 
@@ -243,12 +282,76 @@ impl FamilyManager {
     }
 }
 
-pub struct TextTessellator {
-    pub font_manager: Arc<FamilyManager>,
+#[derive(Clone, Debug)]
+pub struct PositionedGlyph {
+    pub glyph: Glyph,
+    pub rect: Rect,
 }
 
-impl TextTessellator {
-    pub fn new(font_manager: Arc<FamilyManager>) -> Self {
-        TextTessellator { font_manager }
+/// Composed glyphs, ready for rendering.
+#[derive(Clone, Debug)]
+pub struct Galley {
+    pub glyphs: Vec<PositionedGlyph>,
+    pub rect: Rect,
+}
+
+impl Galley {
+    pub fn to_meshes(&self, texture_size: Vec2) -> Vec<Mesh> {
+        let mut meshes = Vec::new();
+        for positioned_glyph in &self.glyphs {
+            let layout_rect = positioned_glyph.rect;
+            let glyph = &positioned_glyph.glyph;
+            let mesh_bounds = glyph.rect.bounds;
+
+            let mesh_rect = Rect {
+                min: Point::new(
+                    layout_rect.min.x + mesh_bounds.min.x,
+                    layout_rect.min.y + mesh_bounds.min.y,
+                ),
+                max: Point::new(
+                    layout_rect.min.x + mesh_bounds.max.x,
+                    layout_rect.min.y + mesh_bounds.max.y,
+                ),
+            };
+            let tex_coords = glyph.rect.texture_coords.normalize(texture_size);
+            let mesh = mesh_rect.to_mesh(
+                0, // TODO: Specific proper texture_id
+                tex_coords,
+            );
+
+            meshes.push(mesh);
+        }
+        meshes
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Typesetter {}
+
+impl Typesetter {
+    pub fn new() -> Self {
+        Typesetter {}
+    }
+
+    pub fn compose(&self, text: &str, family: &Family, position: Point) -> Galley {
+        let mut glyphs = Vec::new();
+        let mut cursor = position.clone();
+        let mut size: Vec2 = Vec2::default();
+        for c in text.chars() {
+            let glyph = family.get_glyph(c);
+            cursor.x += glyph.rect.width + glyph.rect.x_offset;
+            size.x += glyph.rect.width + glyph.rect.x_offset;
+            if size.y < glyph.rect.height {
+                size.y = glyph.rect.height;
+            }
+            glyphs.push(PositionedGlyph {
+                glyph,
+                rect: Rect::with_size(cursor, Vec2::new(glyph.rect.width, glyph.rect.height)),
+            });
+        }
+        Galley {
+            glyphs,
+            rect: Rect::with_size(position, size),
+        }
     }
 }
