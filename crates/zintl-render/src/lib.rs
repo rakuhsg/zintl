@@ -8,7 +8,7 @@ use winit::{
     window::{Window, WindowId},
 };
 use zintl::{app::App, render::RenderContent};
-use zintl_render_math::Point;
+use zintl_render_math::{Point, Vec2};
 
 pub mod mesh;
 mod render;
@@ -34,13 +34,13 @@ pub struct Application<'a> {
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
         let mut family_manager = text::FamilyManager::new();
-        let fam = include_bytes!("../../../assets/NotoSansJP/NotoSansJP-Regular.ttf").to_vec();
+        let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
         family_manager.load_family("Inter".to_string(), fam);
         Self {
             root: app,
             wgpu: None,
             window: None,
-            render_contents: vec![RenderContent::Text("Text".to_string())],
+            render_contents: vec![RenderContent::Text("Fros".to_string())],
             tessellator: tessellator::Tessellator::new(),
             system_font: text::FamilyProperties {
                 name: "Inter".to_string(),
@@ -58,10 +58,16 @@ impl<'a> Application<'a> {
             Some(wgpu) => wgpu,
             None => return,
         };
-        let meshes = self
-            .render_contents
+        let mut meshes = Vec::new();
+
+        let family = self
+            .family_manager
+            .get_family(self.system_font.clone())
+            .expect("Failed to get system font family");
+
+        self.render_contents
             .iter()
-            .map(|content| match content {
+            .for_each(|content| match content {
                 RenderContent::Text(text) => {
                     let family = self
                         .family_manager
@@ -80,12 +86,12 @@ impl<'a> Application<'a> {
                     let galley = self
                         .typesetter
                         .compose(text, &family, Point::new(0.0, 120.0));
-                    let meshes = galley.to_meshes(atlas_size.into());
-                    mesh::Mesh::from_children(meshes)
+                    let inner_meshes = galley.to_meshes(atlas_size.into());
+                    meshes.push(mesh::Mesh::from_children(inner_meshes));
                 }
-                _ => mesh::Mesh::default(),
-            })
-            .collect::<Vec<_>>();
+                _ => {}
+            });
+
         wgpu.draw(meshes);
     }
 }
