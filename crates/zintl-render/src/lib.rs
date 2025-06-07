@@ -50,7 +50,7 @@ impl<'a> Application<'a> {
                     device_pixel_ratio: 1.0,
                 },
             },
-            render_contents: vec![RenderContent::Text("Fros".to_string())],
+            render_contents: vec![RenderContent::Text("Zintl".to_string())],
             tessellator: tessellator::Tessellator::new(),
             system_font: text::FontProperties {
                 name: "Inter".to_string(),
