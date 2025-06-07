@@ -1,4 +1,4 @@
-# Zintl.rs - Building GUI with Rust
+# Zintl UI - Building GUI with Rust
 
 ## Status:WIP
 
