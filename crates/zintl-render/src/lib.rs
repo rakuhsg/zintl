@@ -8,8 +8,8 @@ use winit::{
     window::{Window, WindowId},
 };
 use zintl::{app::App, render::RenderContent};
-use zintl_render_math::Point;
 
+pub mod layout;
 pub mod mesh;
 mod render_object;
 pub mod scaling;
@@ -17,6 +17,8 @@ mod tessellator;
 pub mod text;
 mod texture;
 pub mod wgpu;
+
+use scaling::LogicalPoint;
 
 #[allow(unused)]
 #[derive(Debug)]
@@ -44,8 +46,8 @@ impl<'a> Application<'a> {
             viewport: scaling::Viewport {
                 device_width: 800,
                 device_height: 600,
-                scale_factor: scalling::ScaleFactor {
-                    pixel_device_ratio: 2.0,
+                scale_factor: scaling::ScaleFactor {
+                    device_pixel_ratio: 1.0,
                 },
             },
             render_contents: vec![RenderContent::Text("Fros".to_string())],
@@ -66,7 +68,7 @@ impl<'a> Application<'a> {
             Some(wgpu) => wgpu,
             None => return,
         };
-        let mut meshes = Vec::new();
+        let mut tessellation_jobs = Vec::new();
 
         let family = self
             .typecase
@@ -79,21 +81,21 @@ impl<'a> Application<'a> {
                 RenderContent::Text(text) => {
                     let atlas_size = family.get_atlas_size();
                     let pixels = family.get_atlas_pixels();
-                    let _ = wgpu.register_texture_with_id(
-                        0,
-                        pixels,
-                        atlas_size.0 as u32,
-                        atlas_size.1 as u32,
-                    );
+                    let _ = wgpu.register_texture_with_id(0, pixels, atlas_size);
 
-                    let galley = self
-                        .typesetter
-                        .compose(text, &family, Point::new(0.0, 120.0));
-                    let inner_meshes = galley.to_meshes(atlas_size.into());
-                    meshes.push(mesh::Mesh::from_children(inner_meshes));
+                    // TODO
+                    #[allow(unused)]
+                    let galley =
+                        self.typesetter
+                            .compose(text, &family, LogicalPoint::new(0.0, 120.0));
+                    tessellation_jobs.push(tessellator::TessellationJob::Galley(galley));
                 }
                 _ => {}
             });
+
+        let meshes = self
+            .tessellator
+            .tessellate(&tessellation_jobs[0], &self.viewport);
 
         wgpu.draw(meshes);
     }
@@ -113,13 +115,14 @@ impl<'a> ApplicationHandler for Application<'a> {
         );
         event_loop.set_control_flow(ControlFlow::Wait);
         self.window = Some(window.clone());
-        self.wgpu = match pollster::block_on(WgpuApplication::from_window(window.clone())) {
-            Ok(wgpu) => Some(wgpu),
-            Err(err) => {
-                eprintln!("Failed to create WGPU application: {}", err);
-                None
-            }
-        };
+        self.wgpu =
+            match pollster::block_on(WgpuApplication::from_window(window.clone(), self.viewport)) {
+                Ok(wgpu) => Some(wgpu),
+                Err(err) => {
+                    eprintln!("Failed to create WGPU application: {}", err);
+                    None
+                }
+            };
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
@@ -133,8 +136,11 @@ impl<'a> ApplicationHandler for Application<'a> {
                 event_loop.set_control_flow(ControlFlow::Wait);
             }
             WindowEvent::Resized(size) => {
+                self.viewport.device_width = size.width as u32;
+                self.viewport.device_height = size.height as u32;
+
                 if let Some(wgpu) = &mut self.wgpu {
-                    wgpu.resize(size.width, size.height);
+                    wgpu.resize(self.viewport);
                 }
             }
             _ => (),
