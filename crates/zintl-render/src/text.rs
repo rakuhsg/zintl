@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::mesh::{Mesh, Rect};
-use ab_glyph::{Font, ScaleFont};
+use ab_glyph::{Font as _, ScaleFont};
 use zintl_render_math::{Pixel, Point, PointUSize, Vec2};
 
 /// All of the rendered glyphs in a single atlas.
@@ -114,11 +114,11 @@ pub struct Glyph {
     pub rect: GlyphRect,
 }
 
-/// A font family with a specific size.
+/// A font with a specific size.
 #[derive(Clone, Debug)]
-pub struct Family {
+pub struct Font {
     pub ab_font: ab_glyph::FontArc,
-    pub family: String,
+    pub type_face: String,
     /// The atlas containing the rendered glyphs.
     pub atlas: Arc<Mutex<Atlas>>,
     /// The scale factor for the font.
@@ -134,8 +134,8 @@ pub struct Family {
     pub glyphs: Arc<Mutex<HashMap<char, Glyph>>>,
 }
 
-impl Family {
-    pub fn new(ab_font: ab_glyph::FontArc, family: String, scale: Pixel) -> Self {
+impl Font {
+    pub fn new(ab_font: ab_glyph::FontArc, type_face: String, scale: Pixel) -> Self {
         let atlas = Atlas::new(128, 32);
         let scaled = ab_font.as_scaled(scale);
         let height = scaled.height();
@@ -143,9 +143,9 @@ impl Family {
         let ascent = scaled.ascent();
         let descent = scaled.descent();
 
-        Family {
+        Font {
             ab_font,
-            family,
+            type_face,
             atlas: Mutex::new(atlas).into(),
             scale,
             height,
@@ -237,42 +237,42 @@ impl Family {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Hash, Eq)]
-pub struct FamilyProperties {
+pub struct FontProperties {
     pub name: String,
     /// f32 does not implement Hash, so we use a String instead.
     pub scale_string: String,
 }
 
 #[derive(Clone, Debug)]
-pub struct FamilyManager {
-    pub families: HashMap<String, ab_glyph::FontArc>,
-    pub sized_families: HashMap<FamilyProperties, Family>,
+pub struct Typecase {
+    pub fonts: HashMap<String, ab_glyph::FontArc>,
+    pub sized_fonts: HashMap<FontProperties, Font>,
 }
 
-impl FamilyManager {
+impl Typecase {
     pub fn new() -> Self {
-        FamilyManager {
-            families: HashMap::new(),
-            sized_families: HashMap::new(),
+        Typecase {
+            fonts: HashMap::new(),
+            sized_fonts: HashMap::new(),
         }
     }
 
-    pub fn load_family(&mut self, name: String, data: Vec<u8>) {
-        let family = ab_glyph::FontVec::try_from_vec(data)
+    pub fn load_font(&mut self, name: String, data: Vec<u8>) {
+        let font = ab_glyph::FontVec::try_from_vec(data)
             .map(ab_glyph::FontArc::from)
             .unwrap();
-        self.families.insert(name.clone(), family.clone());
+        self.fonts.insert(name.clone(), font.clone());
     }
 
-    pub fn get_family(&mut self, family: FamilyProperties) -> Option<&Family> {
-        let f = self.sized_families.entry(family.clone()).or_insert({
-            if let Some(ab_font) = self.families.get(&family.name) {
-                let scale = family
+    pub fn get_font(&mut self, font: FontProperties) -> Option<&Font> {
+        let f = self.sized_fonts.entry(font.clone()).or_insert({
+            if let Some(ab_font) = self.fonts.get(&font.name) {
+                let scale = font
                     .scale_string
                     .parse::<f32>()
                     .expect("Invalid scale string");
-                let new_family = Family::new(ab_font.clone(), family.name.clone(), scale);
-                new_family
+                let new_font = Font::new(ab_font.clone(), font.name.clone(), scale);
+                new_font
             } else {
                 return None;
             }
@@ -351,16 +351,16 @@ impl Typesetter {
     }
 
     /// Layouts a text
-    pub fn compose(&self, text: &str, family: &Family, position: Point) -> Galley {
-        let position = Point::new(position.x, position.y + family.ascent);
+    pub fn compose(&self, text: &str, font: &Font, position: Point) -> Galley {
+        let position = Point::new(position.x, position.y + font.ascent);
         let mut glyphs = Vec::new();
         let mut cursor = position.clone();
         let mut size: Vec2 = Vec2::default();
         let mut last_glyph_id = None;
         for c in text.chars() {
-            let glyph = family.get_glyph(c);
+            let glyph = font.get_glyph(c);
             if let Some(last) = last_glyph_id {
-                cursor.x += family.kern(&last, &glyph);
+                cursor.x += font.kern(&last, &glyph);
             }
             if size.y < glyph.rect.height {
                 size.y = glyph.rect.height;
