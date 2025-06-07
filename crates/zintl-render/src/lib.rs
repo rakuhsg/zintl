@@ -8,7 +8,7 @@ use winit::{
     window::{Window, WindowId},
 };
 use zintl::{app::App, render::RenderContent};
-use zintl_render_math::{Point, Vec2};
+use zintl_render_math::Point;
 
 pub mod mesh;
 mod render;
@@ -69,11 +69,6 @@ impl<'a> Application<'a> {
             .iter()
             .for_each(|content| match content {
                 RenderContent::Text(text) => {
-                    let family = self
-                        .family_manager
-                        .get_family(self.system_font.clone())
-                        .expect("Failed to get system font family");
-
                     let atlas_size = family.get_atlas_size();
                     let pixels = family.get_atlas_pixels();
                     let _ = wgpu.register_texture_with_id(
