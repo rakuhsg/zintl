@@ -26,27 +26,27 @@ pub struct Application<'a> {
     window: Option<Arc<Window>>,
     render_contents: Vec<RenderContent>,
     tessellator: tessellator::Tessellator,
-    system_font: text::FamilyProperties,
-    family_manager: text::FamilyManager,
+    system_font: text::FontProperties,
+    typecase: text::Typecase,
     typesetter: text::Typesetter,
 }
 
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
-        let mut family_manager = text::FamilyManager::new();
+        let mut typecase = text::Typecase::new();
         let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
-        family_manager.load_family("Inter".to_string(), fam);
+        typecase.load_font("Inter".to_string(), fam);
         Self {
             root: app,
             wgpu: None,
             window: None,
             render_contents: vec![RenderContent::Text("Fros".to_string())],
             tessellator: tessellator::Tessellator::new(),
-            system_font: text::FamilyProperties {
+            system_font: text::FontProperties {
                 name: "Inter".to_string(),
                 scale_string: "32.0".to_string(),
             },
-            family_manager,
+            typecase,
             typesetter: text::Typesetter::new(),
         }
     }
@@ -61,8 +61,8 @@ impl<'a> Application<'a> {
         let mut meshes = Vec::new();
 
         let family = self
-            .family_manager
-            .get_family(self.system_font.clone())
+            .typecase
+            .get_font(self.system_font.clone())
             .expect("Failed to get system font family");
 
         self.render_contents
