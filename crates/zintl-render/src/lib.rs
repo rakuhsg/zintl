@@ -11,8 +11,8 @@ use zintl::{app::App, render::RenderContent};
 use zintl_render_math::Point;
 
 pub mod mesh;
-mod render;
 mod render_object;
+pub mod scaling;
 mod tessellator;
 pub mod text;
 mod texture;
@@ -24,6 +24,7 @@ pub struct Application<'a> {
     root: App,
     wgpu: Option<WgpuApplication<'a>>,
     window: Option<Arc<Window>>,
+    viewport: scaling::Viewport,
     render_contents: Vec<RenderContent>,
     tessellator: tessellator::Tessellator,
     system_font: text::FontProperties,
@@ -40,6 +41,13 @@ impl<'a> Application<'a> {
             root: app,
             wgpu: None,
             window: None,
+            viewport: scaling::Viewport {
+                device_width: 800,
+                device_height: 600,
+                scale_factor: scalling::ScaleFactor {
+                    pixel_device_ratio: 2.0,
+                },
+            },
             render_contents: vec![RenderContent::Text("Fros".to_string())],
             tessellator: tessellator::Tessellator::new(),
             system_font: text::FontProperties {
@@ -95,7 +103,12 @@ impl<'a> ApplicationHandler for Application<'a> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes())
+                .create_window(Window::default_attributes().with_inner_size(
+                    winit::dpi::LogicalSize {
+                        width: self.viewport.device_width,
+                        height: self.viewport.device_height,
+                    },
+                ))
                 .unwrap(),
         );
         event_loop.set_control_flow(ControlFlow::Wait);
