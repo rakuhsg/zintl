@@ -63,10 +63,13 @@ impl<'a> Application<'a> {
 }
 
 impl<'a> Application<'a> {
-    pub fn render(&mut self) {
+    pub fn render(&mut self, event_loop: &ActiveEventLoop) {
         let wgpu = match &mut self.wgpu {
             Some(wgpu) => wgpu,
-            None => return,
+            None => {
+                event_loop.set_control_flow(ControlFlow::Poll);
+                return;
+            }
         };
         let mut tessellation_jobs = Vec::new();
 
@@ -98,6 +101,8 @@ impl<'a> Application<'a> {
             .tessellate(&tessellation_jobs[0], &self.viewport);
 
         wgpu.draw(meshes);
+
+        event_loop.set_control_flow(ControlFlow::Wait);
     }
 }
 
@@ -113,7 +118,6 @@ impl<'a> ApplicationHandler for Application<'a> {
                 ))
                 .unwrap(),
         );
-        event_loop.set_control_flow(ControlFlow::Wait);
         self.window = Some(window.clone());
         self.wgpu =
             match pollster::block_on(WgpuApplication::from_window(window.clone(), self.viewport)) {
@@ -123,6 +127,7 @@ impl<'a> ApplicationHandler for Application<'a> {
                     None
                 }
             };
+        self.render(event_loop);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
@@ -132,8 +137,7 @@ impl<'a> ApplicationHandler for Application<'a> {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
-                self.render();
-                event_loop.set_control_flow(ControlFlow::Wait);
+                self.render(event_loop);
             }
             WindowEvent::Resized(size) => {
                 self.viewport.device_width = size.width as u32;
@@ -150,8 +154,6 @@ impl<'a> ApplicationHandler for Application<'a> {
 
 pub fn run_app(app: App) {
     let event_loop = EventLoop::new().unwrap();
-
-    event_loop.set_control_flow(ControlFlow::Wait);
 
     let mut w_app = Application::new(app);
     let _ = event_loop.run_app(&mut w_app);
