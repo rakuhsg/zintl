@@ -9,7 +9,7 @@ wgpu = []
 default = ["wgpu"]
 
 [dependencies]
-zintl.workspace = true
+zintl-ui.workspace = true
 zintl-render-math.workspace = true
 winit = "0.30"
 wgpu = "25"
