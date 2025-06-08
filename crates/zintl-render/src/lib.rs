@@ -7,7 +7,7 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
-use zintl::{app::App, render::RenderContent};
+use zintl_ui::{app::App, render::RenderContent};
 
 pub mod layout;
 pub mod mesh;
@@ -47,7 +47,7 @@ impl<'a> Application<'a> {
                 device_width: 800,
                 device_height: 600,
                 scale_factor: scaling::ScaleFactor {
-                    device_pixel_ratio: 1.0,
+                    device_pixel_ratio: 2.0,
                 },
             },
             render_contents: vec![RenderContent::Text("Zintl".to_string())],

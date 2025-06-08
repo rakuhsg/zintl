@@ -1,5 +1,5 @@
-use zintl::app::{self, App, ComposableView, Context, Label, Stack, View};
 use zintl_render::run_app;
+use zintl_ui::app::{self, App, ComposableView, Context, Label, Stack, View};
 
 /*struct Counter {
     count: i32,

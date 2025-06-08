@@ -2616,13 +2616,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "zintl"
-version = "0.1.0"
-dependencies = [
- "zintl-render",
-]
-
-[[package]]
 name = "zintl-render"
 version = "0.1.0"
 dependencies = [
@@ -2634,8 +2627,8 @@ dependencies = [
  "pollster",
  "wgpu",
  "winit",
- "zintl",
  "zintl-render-math",
+ "zintl-ui",
 ]
 
 [[package]]
@@ -2644,4 +2637,11 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cgmath",
+]
+
+[[package]]
+name = "zintl-ui"
+version = "0.1.0"
+dependencies = [
+ "zintl-render",
 ]
