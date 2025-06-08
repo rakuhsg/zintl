@@ -8,9 +8,7 @@ use zintl_render_math::Mat4;
 use std::collections::HashMap;
 
 use crate::mesh::Mesh;
-use crate::scaling::{
-    DevicePixels, DevicePoint, DevicePointF32, DeviceSize, TextureBounds, TexturePoint, Viewport,
-};
+use crate::scaling::{DevicePointF32, DeviceSize, TexturePoint, Viewport};
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -426,58 +424,7 @@ impl<'a> WgpuApplication<'a> {
 
         self.queue.submit(Some(encoder.finish()));
         frame.present();
-        /*rpass.set_bind_group(1, &self.diffuse_bind_group, &[]);
-        rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-        rpass.draw(0..self.vertices.len() as u32, 0..1);*/
     }
-
-    /*pub fn render(&mut self) {
-        let frame = self
-            .surface
-            .get_current_texture()
-            .expect("Failed to acquire next swap chain texture");
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        {
-            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: None,
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
-            self.draw_objects(&mut rpass);
-        }
-
-        self.queue.submit(Some(encoder.finish()));
-        frame.present();
-    }*/
-
-    /*pub async fn from_canvas(canvas: CanvasElement) -> WgpuDriverResult<Self> {
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::GL,
-            ..Default::default()
-        });
-
-        let surface_target = wgpu::SurfaceTarget::Canvas(canvas.elm);
-        let surface = match instance.create_surface(surface_target) {
-            Ok(s) => s,
-            Err(..) => return Err(WgpuDriverError::CreateSurfaceError),
-        };
-
-        Self::init(instance, surface, canvas.width, canvas.height).await
-    }*/
 
     pub fn resize(&mut self, new_viewport: Viewport) {
         if self.viewport != new_viewport {

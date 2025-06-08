@@ -283,58 +283,6 @@ pub struct Galley {
     pub rect: LogicalRect,
 }
 
-impl Galley {
-    /*pub fn to_meshes(&self, texture_size: DeviceSize) -> Vec<Mesh> {
-        self.to_meshes_with_texture_id(0, texture_size)
-    }
-
-    pub fn to_meshes_with_texture_id(
-        &self,
-        texture_id: usize,
-        texture_size: DeviceSize,
-    ) -> Vec<Mesh> {
-        let mut meshes = Vec::new();
-        for positioned_glyph in &self.glyphs {
-            let layout_rect = positioned_glyph.rect;
-            let glyph = &positioned_glyph.glyph;
-            let mesh_bounds = glyph.rect.bounds;
-
-            let mesh_rect = Rect {
-                min: Point::new(
-                    layout_rect.min.x + mesh_bounds.min.x,
-                    layout_rect.max.y + mesh_bounds.min.y,
-                ),
-                max: Point::new(
-                    layout_rect.min.x + mesh_bounds.max.x,
-                    layout_rect.max.y + mesh_bounds.max.y,
-                ),
-            };
-            let tex_coords = glyph.rect.texture_coords.normalize(texture_size);
-            let mesh = mesh_rect.to_mesh(texture_id, tex_coords);
-
-            meshes.push(mesh);
-        }
-        meshes
-    }
-
-    /// For debugging porposes.
-    pub fn to_meshes_from_layout_rect(&self, texture_id: usize, texture_size: Vec2) -> Vec<Mesh> {
-        let mut meshes = Vec::new();
-        for positioned_glyph in &self.glyphs {
-            let layout_rect = positioned_glyph.rect;
-            let tex_coords = positioned_glyph
-                .glyph
-                .rect
-                .texture_coords
-                .normalize(texture_size);
-            let mesh = layout_rect.to_mesh(texture_id, tex_coords);
-
-            meshes.push(mesh);
-        }
-        meshes
-    }*/
-}
-
 #[derive(Clone, Debug)]
 pub struct Typesetter {}
 

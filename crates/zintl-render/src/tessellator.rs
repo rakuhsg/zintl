@@ -1,5 +1,5 @@
 use crate::mesh::Mesh;
-use crate::scaling::{DevicePoint, DeviceRect, LogicalPoint, LogicalRect, Viewport};
+use crate::scaling::{DeviceRect, LogicalPoint, Viewport};
 use crate::text::Galley;
 
 pub enum TessellationJob {
