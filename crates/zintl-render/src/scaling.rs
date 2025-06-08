@@ -1,7 +1,36 @@
 use zintl_render_math::Vec2;
 
 pub type DevicePixels = u32;
+
+pub trait DeviceScale {
+    fn in_logical_pixels(self, scale_factor: &ScaleFactor) -> LogicalPixels;
+}
+
+impl DeviceScale for DevicePixels {
+    fn in_logical_pixels(self, scale_factor: &ScaleFactor) -> LogicalPixels {
+        (self as f32 / scale_factor.device_pixel_ratio).round() as LogicalPixels
+    }
+}
+
+pub type DevicePixelsF32 = f32;
+
+impl DeviceScale for DevicePixelsF32 {
+    fn in_logical_pixels(self, scale_factor: &ScaleFactor) -> LogicalPixels {
+        (self / scale_factor.device_pixel_ratio).round() as LogicalPixels
+    }
+}
+
 pub type LogicalPixels = f32;
+
+pub trait LogicalScale {
+    fn in_device_pixels(self, scale_factor: &ScaleFactor) -> DevicePixels;
+}
+
+impl LogicalScale for LogicalPixels {
+    fn in_device_pixels(self, scale_factor: &ScaleFactor) -> DevicePixels {
+        (self * scale_factor.device_pixel_ratio).round() as DevicePixels
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Viewport {
