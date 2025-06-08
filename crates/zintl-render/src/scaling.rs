@@ -136,8 +136,8 @@ impl LogicalPoint {
 
     pub fn scale(&self, device_pixel_ratio: f32) -> DevicePoint {
         DevicePoint {
-            x: (self.x / device_pixel_ratio).round() as DevicePixels,
-            y: (self.y / device_pixel_ratio) as DevicePixels,
+            x: (self.x * device_pixel_ratio).round() as DevicePixels,
+            y: (self.y * device_pixel_ratio) as DevicePixels,
         }
     }
 }
