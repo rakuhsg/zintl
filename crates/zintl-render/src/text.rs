@@ -2,94 +2,24 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::scaling::{
-    DevicePixels, DevicePoint, DeviceRect, DeviceSize, LogicalPixels, LogicalPoint, LogicalRect,
+    DevicePixels, DevicePixelsF32, DeviceRect, DeviceSize, LogicalPixels, LogicalPoint,
+    LogicalRect, ScaleFactor,
 };
+use crate::texture::Atlas;
 use ab_glyph::{Font as _, ScaleFont};
 use zintl_render_math::Vec2;
-
-/// All of the rendered glyphs in a single atlas.
-#[derive(Clone, Debug)]
-pub struct Atlas {
-    /// A cached height of the atlas.
-    height: DevicePixels,
-    /// Where to draw new glyphs in the atlas.
-    cursor: DevicePoint,
-    /// The pixel data of the atlas, stored as a flat array of RGBA values.
-    pixels: Vec<u8>,
-    width: DevicePixels,
-    row_height: DevicePixels,
-}
-
-impl Atlas {
-    /// Creates a new `Atlas` with the specified width and height.
-    pub fn new(initial_width: DevicePixels, initial_height: DevicePixels) -> Self {
-        let pixels = vec![0; (initial_width * initial_height * 4) as usize];
-        Atlas {
-            height: initial_height,
-            cursor: DevicePoint::new(0, 0),
-            pixels,
-            width: initial_width,
-            row_height: 0,
-        }
-    }
-
-    fn resize_pixels(&mut self, new_height: DevicePixels) {
-        if new_height > self.height {
-            let new_size = self.width * new_height * 4;
-            self.pixels.resize(new_size as usize, 0);
-            self.height = new_height;
-        }
-    }
-
-    /// Texture bounds (is not normalized), atlas width, and mutable pixel data.
-    pub fn create_image(
-        &mut self,
-        width: DevicePixels,
-        height: DevicePixels,
-    ) -> (DeviceRect, DevicePixels, &mut Vec<u8>) {
-        // Allocate a new texture with the specified width and height.
-        {
-            // We need to allocate a new row
-            if self.cursor.x + width > self.width {
-                self.cursor.x = 0;
-                self.cursor.y += self.row_height;
-                self.row_height = 0;
-            }
-
-            self.row_height = self.row_height.max(height);
-
-            let new_height = self.cursor.y + self.row_height;
-            self.resize_pixels(new_height);
-        }
-
-        let pos = self.cursor;
-        self.cursor.x += width;
-
-        (
-            DeviceRect::new(pos, DevicePoint::new(pos.x + width, pos.y + height)),
-            self.width.clone(),
-            &mut self.pixels,
-        )
-    }
-
-    /// Returns a reference to the pixel data of the atlas.
-    pub fn pixels_mut_ref(&mut self) -> &mut [u8] {
-        &mut self.pixels
-    }
-
-    pub fn pixels(&self) -> Vec<u8> {
-        self.pixels.clone()
-    }
-}
 
 /// A rectangle and texture coordinates for a glyph.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct GlyphRect {
     /// The width of the glyph in pixels.
+    /// TODO: But actually this is physical pixels, not logical.
     pub width: LogicalPixels,
     /// The height of the glyph in pixels.
+    /// TODO: But actually this is physical pixels, not logical.
     pub height: LogicalPixels,
     /// Mesh bounds on the glyph rectangle. NOT FOR LAYOUTING.
+    /// TODO: But actually this is physical pixels, not logical.
     pub bounds: LogicalRect,
     /// The texture bounds of the glyph in the atlas.
     pub texture_bounds: DeviceRect,
@@ -111,21 +41,30 @@ pub struct Font {
     /// The atlas containing the rendered glyphs.
     pub atlas: Arc<Mutex<Atlas>>,
     /// The scale factor for the font.
-    pub scale: LogicalPixels,
-    pub height: LogicalPixels,
+    pub scale: DevicePixelsF32,
+    pub height: DevicePixelsF32,
     /// https://docs.rs/ab_glyph/latest/ab_glyph/trait.Font.html#glyph-layout-concepts
-    pub ascent: LogicalPixels,
+    pub ascent: DevicePixelsF32,
     /// https://docs.rs/ab_glyph/latest/ab_glyph/trait.Font.html#glyph-layout-concepts
-    pub descent: LogicalPixels,
+    pub descent: DevicePixelsF32,
     /// https://docs.rs/ab_glyph/latest/ab_glyph/trait.Font.html#glyph-layout-concepts
-    pub line_gap: LogicalPixels,
+    pub line_gap: DevicePixelsF32,
     /// A cached list of glyphs in the atlas.
     pub glyphs: Arc<Mutex<HashMap<char, Glyph>>>,
 }
 
 impl Font {
-    pub fn new(ab_font: ab_glyph::FontArc, type_face: String, scale: LogicalPixels) -> Self {
-        let atlas = Atlas::new(128, 32);
+    pub fn new(
+        ab_font: ab_glyph::FontArc,
+        type_face: String,
+        scale: LogicalPixels,
+        scale_factor: ScaleFactor,
+    ) -> Self {
+        let scale = scale * scale_factor.dpr;
+        //let scale = scale.in_device_pixels(&scale_factor);
+        let atlas = Atlas::new((scale as u32).max(1024), (scale as u32).max(32));
+        let scale = scale as f32;
+        // Init the font with PHYSICAL scale.
         let scaled = ab_font.as_scaled(scale);
         let height = scaled.height();
         let line_gap = scaled.line_gap();
@@ -152,40 +91,48 @@ impl Font {
         }
 
         let atlas = &mut self.atlas.lock().unwrap();
-        let scaled = self.ab_font.as_scaled(self.scale);
-        let g = scaled.scaled_glyph(c);
-        let id = g.id;
+        // Init the font with PHYSICAL scale.
+        let id = self.ab_font.glyph_id(c);
 
         if id.0 == 0 {
             return Glyph::default();
         }
 
-        let advance = scaled.h_advance(id);
+        let scaled = self.ab_font.as_scaled(self.scale as f32);
+        let h_advance = scaled.h_advance(id);
+
+        let g = id.with_scale_and_position(
+            self.scale,
+            ab_glyph::Point {
+                x: 0.0,
+                y: scaled.ascent(),
+            },
+        );
 
         let rect = {
             if let Some(g) = self.ab_font.outline_glyph(g) {
                 let px_bounds = g.px_bounds();
+
                 // TODO: Properly scale the bounds
                 let px_width = px_bounds.width() as DevicePixels;
                 let px_height = px_bounds.height() as DevicePixels;
                 // base: the absolute position in the atlas where the glyph will be drawn.
                 let (texture_bounds, atlas_width, pixels) = atlas.create_image(px_width, px_height);
-
                 g.draw(|x, y, c| {
-                    if c < 0.01 {
+                    if c == 0.0 {
                         return; // Skip transparent pixels
                     }
                     let start = (texture_bounds.min.y + y) * atlas_width * 4
                         + (texture_bounds.min.x + x) * 4;
                     let start = start as usize;
-                    pixels[start] = ((1. - c) * 255.) as u8; // R
+                    pixels[start] = ((1. - c) * 255.) as u8;
                     pixels[start + 1] = ((1. - c) * 255.) as u8;
                     pixels[start + 2] = ((1. - c) * 255.) as u8;
                     pixels[start + 3] = (c * 255.) as u8;
                 });
 
                 GlyphRect {
-                    width: advance,
+                    width: h_advance,
                     height: self.height,
                     bounds: LogicalRect {
                         min: LogicalPoint::new(px_bounds.min.x, px_bounds.min.y),
@@ -236,13 +183,15 @@ pub struct FontProperties {
 pub struct Typecase {
     pub fonts: HashMap<String, ab_glyph::FontArc>,
     pub sized_fonts: HashMap<FontProperties, Font>,
+    pub scale_factor: ScaleFactor,
 }
 
 impl Typecase {
-    pub fn new() -> Self {
+    pub fn new(scale_factor: ScaleFactor) -> Self {
         Typecase {
             fonts: HashMap::new(),
             sized_fonts: HashMap::new(),
+            scale_factor,
         }
     }
 
@@ -260,7 +209,8 @@ impl Typecase {
                     .scale_string
                     .parse::<f32>()
                     .expect("Invalid scale string");
-                let new_font = Font::new(ab_font.clone(), font.name.clone(), scale);
+                let new_font =
+                    Font::new(ab_font.clone(), font.name.clone(), scale, self.scale_factor);
                 new_font
             } else {
                 return None;
@@ -293,7 +243,7 @@ impl Typesetter {
 
     /// Layouts a text
     pub fn compose(&self, text: &str, font: &Font, position: LogicalPoint) -> Galley {
-        let position = LogicalPoint::new(position.x, position.y + font.ascent);
+        let position = LogicalPoint::new(position.x, position.y);
         let mut glyphs = Vec::new();
         let mut cursor = position.clone();
         let mut size: Vec2 = Vec2::default();

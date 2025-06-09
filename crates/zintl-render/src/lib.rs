@@ -36,7 +36,11 @@ pub struct Application<'a> {
 
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
-        let mut typecase = text::Typecase::new();
+        let scale_factor = scaling::ScaleFactor {
+            dpi: 96.0,
+            dpr: 1.25,
+        };
+        let mut typecase = text::Typecase::new(scale_factor.clone());
         let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
         typecase.load_font("Inter".to_string(), fam);
         Self {
@@ -46,9 +50,7 @@ impl<'a> Application<'a> {
             viewport: scaling::Viewport {
                 device_width: 800,
                 device_height: 600,
-                scale_factor: scaling::ScaleFactor {
-                    device_pixel_ratio: 2.0,
-                },
+                scale_factor,
             },
             render_contents: vec![RenderContent::Text("Zintl".to_string())],
             tessellator: tessellator::Tessellator::new(),
@@ -90,7 +92,7 @@ impl<'a> Application<'a> {
                     #[allow(unused)]
                     let galley =
                         self.typesetter
-                            .compose(text, &family, LogicalPoint::new(0.0, 120.0));
+                            .compose(text, &family, LogicalPoint::new(0.0, 0.0));
                     tessellation_jobs.push(tessellator::TessellationJob::Galley(galley));
                 }
                 _ => {}
@@ -119,6 +121,7 @@ impl<'a> ApplicationHandler for Application<'a> {
                 .unwrap(),
         );
         self.window = Some(window.clone());
+        println!("Window scale factor: {}", window.scale_factor());
         self.wgpu =
             match pollster::block_on(WgpuApplication::from_window(window.clone(), self.viewport)) {
                 Ok(wgpu) => Some(wgpu),

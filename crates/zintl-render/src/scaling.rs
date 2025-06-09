@@ -1,7 +1,36 @@
 use zintl_render_math::Vec2;
 
 pub type DevicePixels = u32;
+
+pub trait DeviceScale {
+    fn in_logical_pixels(self, scale_factor: &ScaleFactor) -> LogicalPixels;
+}
+
+impl DeviceScale for DevicePixels {
+    fn in_logical_pixels(self, scale_factor: &ScaleFactor) -> LogicalPixels {
+        (self as f32 / scale_factor.dpr).round() as LogicalPixels
+    }
+}
+
+pub type DevicePixelsF32 = f32;
+
+impl DeviceScale for DevicePixelsF32 {
+    fn in_logical_pixels(self, scale_factor: &ScaleFactor) -> LogicalPixels {
+        (self / scale_factor.dpr).round() as LogicalPixels
+    }
+}
+
 pub type LogicalPixels = f32;
+
+pub trait LogicalScale {
+    fn in_device_pixels(self, scale_factor: &ScaleFactor) -> DevicePixels;
+}
+
+impl LogicalScale for LogicalPixels {
+    fn in_device_pixels(self, scale_factor: &ScaleFactor) -> DevicePixels {
+        (self * scale_factor.dpr).round() as DevicePixels
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Viewport {
@@ -14,7 +43,8 @@ pub struct Viewport {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ScaleFactor {
-    pub device_pixel_ratio: f32,
+    pub dpi: f32,
+    pub dpr: f32,
 }
 
 /// A Normalized Texture Point.
@@ -29,8 +59,16 @@ pub struct TexturePoint {
 
 impl TexturePoint {
     pub fn new(x: f32, y: f32) -> Self {
-        assert!(x >= 0.0 && x <= 1.0, "TexturePoint x must be in [0.0, 1.0]");
-        assert!(y >= 0.0 && y <= 1.0, "TexturePoint y must be in [0.0, 1.0]");
+        assert!(
+            x >= 0.0 && x <= 1.0,
+            "TexturePoint x must be in [0.0, 1.0] but got {}",
+            x
+        );
+        assert!(
+            y >= 0.0 && y <= 1.0,
+            "TexturePoint y must be in [0.0, 1.0] but got {}",
+            y
+        );
 
         TexturePoint { x, y }
     }
@@ -109,6 +147,21 @@ impl DeviceRect {
     pub fn new(min: DevicePoint, max: DevicePoint) -> Self {
         DeviceRect { min, max }
     }
+
+    pub fn zero() -> Self {
+        Self {
+            min: DevicePoint::new(0, 0),
+            max: DevicePoint::new(0, 0),
+        }
+    }
+
+    pub fn width(&self) -> u32 {
+        self.max.x - self.min.x
+    }
+
+    pub fn height(&self) -> u32 {
+        self.max.y - self.min.y
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -134,10 +187,10 @@ impl LogicalPoint {
         LogicalPoint { x, y }
     }
 
-    pub fn scale(&self, device_pixel_ratio: f32) -> DevicePoint {
+    pub fn scale(&self, scale_factor: &ScaleFactor) -> DevicePoint {
         DevicePoint {
-            x: (self.x * device_pixel_ratio).round() as DevicePixels,
-            y: (self.y * device_pixel_ratio) as DevicePixels,
+            x: self.x.in_device_pixels(scale_factor),
+            y: self.y.in_device_pixels(scale_factor),
         }
     }
 }
@@ -153,10 +206,10 @@ impl LogicalRect {
         Self { min, max }
     }
 
-    pub fn scale(&self, device_pixel_ratio: f32) -> DeviceRect {
+    pub fn scale(&self, scale_factor: &ScaleFactor) -> DeviceRect {
         DeviceRect {
-            min: self.min.scale(device_pixel_ratio),
-            max: self.max.scale(device_pixel_ratio),
+            min: self.min.scale(scale_factor),
+            max: self.max.scale(scale_factor),
         }
     }
 
