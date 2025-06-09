@@ -1,4 +1,4 @@
-use crate::scaling::{DevicePixels, DevicePoint, DeviceRect, ScaleFactor};
+use crate::scaling::{DevicePixels, DevicePoint, DeviceRect};
 
 /// All of the rendered glyphs in a single atlas.
 #[derive(Clone, Debug)]

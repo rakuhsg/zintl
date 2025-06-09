@@ -37,7 +37,8 @@ pub struct Application<'a> {
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
         let scale_factor = scaling::ScaleFactor {
-            device_pixel_ratio: 1.25,
+            dpi: 96.0,
+            dpr: 1.25,
         };
         let mut typecase = text::Typecase::new(scale_factor.clone());
         let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
@@ -91,7 +92,7 @@ impl<'a> Application<'a> {
                     #[allow(unused)]
                     let galley =
                         self.typesetter
-                            .compose(text, &family, LogicalPoint::new(0.0, 120.0));
+                            .compose(text, &family, LogicalPoint::new(0.0, 0.0));
                     tessellation_jobs.push(tessellator::TessellationJob::Galley(galley));
                 }
                 _ => {}
