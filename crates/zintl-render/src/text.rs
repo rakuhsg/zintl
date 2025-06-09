@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::scaling::{
-    DevicePixels, DevicePixelsF32, DeviceRect, DeviceScale, DeviceSize, LogicalPixels,
-    LogicalPoint, LogicalRect, LogicalScale, ScaleFactor, Viewport,
+    DevicePixels, DevicePixelsF32, DeviceRect, DeviceSize, LogicalPixels, LogicalPoint,
+    LogicalRect, ScaleFactor,
 };
 use crate::texture::Atlas;
 use ab_glyph::{Font as _, ScaleFont};
@@ -42,7 +42,6 @@ pub struct Font {
     pub atlas: Arc<Mutex<Atlas>>,
     /// The scale factor for the font.
     pub scale: DevicePixelsF32,
-    scale_factor: ScaleFactor,
     pub height: DevicePixelsF32,
     /// https://docs.rs/ab_glyph/latest/ab_glyph/trait.Font.html#glyph-layout-concepts
     pub ascent: DevicePixelsF32,
@@ -77,7 +76,6 @@ impl Font {
             type_face,
             atlas: Mutex::new(atlas).into(),
             scale,
-            scale_factor,
             height,
             ascent,
             descent,

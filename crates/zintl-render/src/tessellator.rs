@@ -1,5 +1,5 @@
 use crate::mesh::Mesh;
-use crate::scaling::{DevicePoint, DeviceRect, LogicalPoint, Viewport};
+use crate::scaling::{DevicePoint, DeviceRect, Viewport};
 use crate::text::Galley;
 
 pub enum TessellationJob {
@@ -16,7 +16,7 @@ impl Tessellator {
         Tessellator {}
     }
 
-    pub fn tessellate_galley(&mut self, galley: &Galley, viewport: &Viewport) -> Vec<Mesh> {
+    pub fn tessellate_galley(&mut self, galley: &Galley) -> Vec<Mesh> {
         let mut meshes = Vec::new();
         for positioned_glyph in &galley.glyphs {
             let layout_rect = positioned_glyph.rect;
@@ -46,9 +46,9 @@ impl Tessellator {
         meshes
     }
 
-    pub fn tessellate(&mut self, job: &TessellationJob, viewport: &Viewport) -> Vec<Mesh> {
+    pub fn tessellate(&mut self, job: &TessellationJob, _viewport: &Viewport) -> Vec<Mesh> {
         match job {
-            TessellationJob::Galley(galley) => self.tessellate_galley(galley, viewport),
+            TessellationJob::Galley(galley) => self.tessellate_galley(galley),
             _ => {
                 vec![]
             }
