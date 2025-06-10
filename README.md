@@ -2,7 +2,7 @@
 
 ## Status:WIP
 
-| [Source code](https://github.com/CanvasPads/Zintl) | [Crates.io](https://crates.io/crates/zintl) | [Docs](https://docs.rs/zintl/latest/zintl) |
+| [Source code](https://github.com/zintl-org/zintl-ui) | [Crates.io](https://crates.io/crates/zintl-ui) | [Docs](https://docs.rs/zintl-ui/latest/zintl-ui) |
 
 ## Rapidly build GUI applications in Rust
 
