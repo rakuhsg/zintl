@@ -7,3 +7,4 @@ authors.workspace = true
 [dependencies]
 bytemuck.workspace = true
 cgmath.workspace = true
+paste = "1.0"

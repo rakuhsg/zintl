@@ -1,11 +1,11 @@
-use crate::scaling::{DevicePoint, DeviceRect};
+use zintl_render_math::{PhysicalPixelsPoint, PhysicalPixelsRect};
 
 /// Vertex in device pixels.
 /// note: Texture bounds are not normalized.
 #[derive(Clone, Debug)]
 pub struct Vertex {
-    pub position: DevicePoint,
-    pub tex_coords: DevicePoint,
+    pub position: PhysicalPixelsPoint,
+    pub tex_coords: PhysicalPixelsPoint,
 }
 
 /// Mesh in device pixels
@@ -29,26 +29,26 @@ impl Mesh {
     }
 
     pub fn from_device_rect(
-        rect: DeviceRect,
+        rect: PhysicalPixelsRect,
         texture_id: Option<usize>,
-        tex_bounds: DeviceRect,
+        tex_bounds: PhysicalPixelsRect,
     ) -> Self {
         let vertices = vec![
             Vertex {
                 position: rect.min,
-                tex_coords: DevicePoint::new(tex_bounds.min.x, tex_bounds.min.y),
+                tex_coords: PhysicalPixelsPoint::new(tex_bounds.min.x, tex_bounds.min.y),
             },
             Vertex {
-                position: DevicePoint::new(rect.max.x, rect.min.y),
-                tex_coords: DevicePoint::new(tex_bounds.max.x, tex_bounds.min.y),
+                position: PhysicalPixelsPoint::new(rect.max.x, rect.min.y),
+                tex_coords: PhysicalPixelsPoint::new(tex_bounds.max.x, tex_bounds.min.y),
             },
             Vertex {
-                position: DevicePoint::new(rect.max.x, rect.max.y),
-                tex_coords: DevicePoint::new(tex_bounds.max.x, tex_bounds.max.y),
+                position: PhysicalPixelsPoint::new(rect.max.x, rect.max.y),
+                tex_coords: PhysicalPixelsPoint::new(tex_bounds.max.x, tex_bounds.max.y),
             },
             Vertex {
-                position: DevicePoint::new(rect.min.x, rect.max.y),
-                tex_coords: DevicePoint::new(tex_bounds.min.x, tex_bounds.max.y),
+                position: PhysicalPixelsPoint::new(rect.min.x, rect.max.y),
+                tex_coords: PhysicalPixelsPoint::new(tex_bounds.min.x, tex_bounds.max.y),
             },
         ];
         let indices = vec![0, 1, 2, 0, 2, 3];

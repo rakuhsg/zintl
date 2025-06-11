@@ -7,18 +7,17 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
+
+use zintl_render_math::{LogicalPixelsPoint, ScaleFactor, Viewport};
 use zintl_ui::{app::App, render::RenderContent};
 
 pub mod layout;
 pub mod mesh;
 mod render_object;
-pub mod scaling;
 mod tessellator;
 pub mod text;
 mod texture;
 pub mod wgpu;
-
-use scaling::LogicalPoint;
 
 #[allow(unused)]
 #[derive(Debug)]
@@ -26,7 +25,7 @@ pub struct Application<'a> {
     root: App,
     wgpu: Option<WgpuApplication<'a>>,
     window: Option<Arc<Window>>,
-    viewport: scaling::Viewport,
+    viewport: Viewport,
     render_contents: Vec<RenderContent>,
     tessellator: tessellator::Tessellator,
     system_font: text::FontProperties,
@@ -36,10 +35,7 @@ pub struct Application<'a> {
 
 impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
-        let scale_factor = scaling::ScaleFactor {
-            dpi: 96.0,
-            dpr: 1.25,
-        };
+        let scale_factor = ScaleFactor::new(96.0, 1.25);
         let mut typecase = text::Typecase::new(scale_factor.clone());
         let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
         typecase.load_font("Inter".to_string(), fam);
@@ -47,11 +43,7 @@ impl<'a> Application<'a> {
             root: app,
             wgpu: None,
             window: None,
-            viewport: scaling::Viewport {
-                device_width: 800,
-                device_height: 600,
-                scale_factor,
-            },
+            viewport: Viewport::new(800.into(), 600.into(), scale_factor),
             render_contents: vec![RenderContent::Text("Zintl".to_string())],
             tessellator: tessellator::Tessellator::new(),
             system_font: text::FontProperties {
@@ -90,9 +82,12 @@ impl<'a> Application<'a> {
 
                     // TODO
                     #[allow(unused)]
-                    let galley =
-                        self.typesetter
-                            .compose(text, &family, LogicalPoint::new(0.0, 0.0));
+                    let galley = self.typesetter.compose(
+                        text,
+                        &family,
+                        LogicalPixelsPoint::new(0.0.into(), 0.0.into()),
+                        &self.viewport.scale_factor,
+                    );
                     tessellation_jobs.push(tessellator::TessellationJob::Galley(galley));
                 }
                 _ => {}
@@ -114,8 +109,8 @@ impl<'a> ApplicationHandler for Application<'a> {
             event_loop
                 .create_window(Window::default_attributes().with_inner_size(
                     winit::dpi::LogicalSize {
-                        width: self.viewport.device_width,
-                        height: self.viewport.device_height,
+                        width: self.viewport.device_width.value(),
+                        height: self.viewport.device_height.value(),
                     },
                 ))
                 .unwrap(),
@@ -143,8 +138,8 @@ impl<'a> ApplicationHandler for Application<'a> {
                 self.render(event_loop);
             }
             WindowEvent::Resized(size) => {
-                self.viewport.device_width = size.width as u32;
-                self.viewport.device_height = size.height as u32;
+                self.viewport.device_width = (size.width as u32).into();
+                self.viewport.device_height = (size.height as u32).into();
 
                 if let Some(wgpu) = &mut self.wgpu {
                     wgpu.resize(self.viewport);
