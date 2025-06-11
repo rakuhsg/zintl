@@ -1,6 +1,6 @@
 [workspace]
-resolver = "2"
-members = ["crates/zintl-ui", "crates/zintl-render", "crates/zintl-render-math"]
+resolver = "3"
+members = ["crates/zintl-ui", "crates/zintl-render", "crates/zintl-render-math", "crates/zintl-run", "crates/zintl-wgpu", "crates/zintl-winit"]
 
 [workspace.package]
 authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
@@ -9,5 +9,8 @@ authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
 zintl-ui = { path = "crates/zintl-ui" }
 zintl-render = { path = "crates/zintl-render" }
 zintl-render-math = { path = "crates/zintl-render-math" }
-bytemuck = "1.23"
+zintl-run = { path = "crates/zintl-run" }
+zintl-wgpu = { path = "crates/zintl-wgpu" }
+zintl-winit = { path = "crates/zintl-winit" }
+bytemuck = { version = "=1.23", features = ["derive"] }
 cgmath = "0.18"
