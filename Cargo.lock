@@ -2637,7 +2637,12 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cgmath",
+ "paste",
 ]
+
+[[package]]
+name = "zintl-run"
+version = "0.1.0"
 
 [[package]]
 name = "zintl-ui"
@@ -2645,3 +2650,11 @@ version = "0.1.0"
 dependencies = [
  "zintl-render",
 ]
+
+[[package]]
+name = "zintl-wgpu"
+version = "0.1.0"
+
+[[package]]
+name = "zintl-winit"
+version = "0.1.0"
