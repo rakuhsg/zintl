@@ -421,13 +421,13 @@ macro_rules! define_unit {
                 }
 
                 #[inline]
-                pub fn width(&self) -> $type_name {
-                    self.max.x_value() - self.min.x_value()
+                pub fn width(&self) -> $unit_name {
+                    self.max.x - self.min.x
                 }
 
                 #[inline]
-                pub fn height(&self) -> $type_name {
-                    self.max.y_value() - self.min.y_value()
+                pub fn height(&self) -> $unit_name {
+                    self.max.y - self.min.y
                 }
 
                 #[inline]
@@ -577,6 +577,26 @@ impl From<PhysicalPixelsFPoint> for PhysicalPixelsPoint {
     }
 }
 
+impl From<PhysicalPixelsSize> for PhysicalPixelsFSize {
+    #[inline]
+    fn from(size: PhysicalPixelsSize) -> Self {
+        PhysicalPixelsFSize {
+            width: size.width.into(),
+            height: size.height.into(),
+        }
+    }
+}
+
+impl From<PhysicalPixelsFSize> for PhysicalPixelsSize {
+    #[inline]
+    fn from(size: PhysicalPixelsFSize) -> Self {
+        PhysicalPixelsSize {
+            width: size.width.into(),
+            height: size.height.into(),
+        }
+    }
+}
+
 pub trait InPhysicalScale<PhysicalUnit> {
     fn in_physical_scale(&self, scale_factor: &ScaleFactor) -> PhysicalUnit;
 }
@@ -585,31 +605,168 @@ pub trait InLogicalScale<LogicalUnit> {
     fn in_logical_scale(&self, scale_factor: &ScaleFactor) -> LogicalUnit;
 }
 
-impl InPhysicalScale<PhysicalPixels> for LogicalPixels {
-    #[inline]
-    fn in_physical_scale(&self, scale_factor: &ScaleFactor) -> PhysicalPixels {
-        PhysicalPixels::new((self.0 * scale_factor.dpr()).round() as u32)
-    }
+macro_rules! impl_in_physical_scale {
+    ($from:ty, $to:ty, $base_type:ty) => {
+        impl InPhysicalScale<$to> for $from {
+            #[inline]
+            fn in_physical_scale(&self, scale_factor: &ScaleFactor) -> $to {
+                <$to>::new((self.0 * scale_factor.dpr()).round() as $base_type)
+            }
+        }
+        paste! {
+            impl InPhysicalScale<[<$to Point>]> for [<$from Point>] {
+                #[inline]
+                fn in_physical_scale(&self, scale_factor: &ScaleFactor) -> [<$to Point>] {
+                    [<$to Point>] {
+                        x: self.x.in_physical_scale(scale_factor),
+                        y: self.y.in_physical_scale(scale_factor),
+                    }
+                }
+            }
+
+            impl InPhysicalScale<[<$to Rect>]> for [<$from Rect>] {
+                #[inline]
+                fn in_physical_scale(&self, scale_factor: &ScaleFactor) -> [<$to Rect>] {
+                    [<$to Rect>] {
+                        min: self.min.in_physical_scale(scale_factor),
+                        max: self.max.in_physical_scale(scale_factor),
+                    }
+                }
+            }
+
+            impl InPhysicalScale<[<$to Size>]> for [<$from Size>] {
+                #[inline]
+                fn in_physical_scale(&self, scale_factor: &ScaleFactor) -> [<$to Size>] {
+                    [<$to Size>] {
+                        width: self.width.in_physical_scale(scale_factor),
+                        height: self.height.in_physical_scale(scale_factor),
+                    }
+                }
+            }
+        }
+    };
 }
 
-impl InPhysicalScale<PhysicalPixelsF> for LogicalPixels {
-    #[inline]
-    fn in_physical_scale(&self, scale_factor: &ScaleFactor) -> PhysicalPixelsF {
-        PhysicalPixelsF::new((self.0 * scale_factor.dpr()).round())
-    }
+macro_rules! impl_in_logical_scale {
+    ($from:ty, $to:ty, $base_type:ty) => {
+        impl InLogicalScale<$to> for $from {
+            #[inline]
+            fn in_logical_scale(&self, scale_factor: &ScaleFactor) -> $to {
+                <$to>::new((self.0 as f32 / scale_factor.dpr()).round() as $base_type)
+            }
+        }
+
+        paste! {
+            impl InLogicalScale<[<$to Point>]> for [<$from Point>] {
+                #[inline]
+                fn in_logical_scale(&self, scale_factor: &ScaleFactor) -> [<$to Point>] {
+                    [<$to Point>] {
+                        x: self.x.in_logical_scale(scale_factor),
+                        y: self.y.in_logical_scale(scale_factor),
+                    }
+                }
+            }
+
+            impl InLogicalScale<[<$to Rect>]> for [<$from Rect>] {
+                #[inline]
+                fn in_logical_scale(&self, scale_factor: &ScaleFactor) -> [<$to Rect>] {
+                    [<$to Rect>] {
+                        min: self.min.in_logical_scale(scale_factor),
+                        max: self.max.in_logical_scale(scale_factor),
+                    }
+                }
+            }
+
+            impl InLogicalScale<[<$to Size>]> for [<$from Size>] {
+                #[inline]
+                fn in_logical_scale(&self, scale_factor: &ScaleFactor) -> [<$to Size>] {
+                    [<$to Size>] {
+                        width: self.width.in_logical_scale(scale_factor),
+                        height: self.height.in_logical_scale(scale_factor),
+                    }
+                }
+            }
+        }
+    };
 }
 
-impl InLogicalScale<LogicalPixels> for PhysicalPixels {
-    #[inline]
-    fn in_logical_scale(&self, scale_factor: &ScaleFactor) -> LogicalPixels {
-        LogicalPixels::new(self.0 as f32 / scale_factor.dpr())
-    }
+impl_in_physical_scale!(LogicalPixels, PhysicalPixels, u32);
+impl_in_physical_scale!(LogicalPixels, PhysicalPixelsF, f32);
+impl_in_logical_scale!(PhysicalPixels, LogicalPixels, f32);
+impl_in_logical_scale!(PhysicalPixelsF, LogicalPixels, f32);
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum Alignment {
+    #[default]
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+    Center,
+    CenterLeft,
+    CenterRight,
+    CenterTop,
+    CenterBottom,
 }
 
-impl InLogicalScale<LogicalPixels> for PhysicalPixelsF {
-    #[inline]
-    fn in_logical_scale(&self, scale_factor: &ScaleFactor) -> LogicalPixels {
-        LogicalPixels::new(self.0 / scale_factor.dpr())
+impl Alignment {
+    pub fn align_size(
+        &self,
+        bounds: LogicalPixelsRect,
+        size: LogicalPixelsSize,
+    ) -> LogicalPixelsRect {
+        let mut x = bounds.min.x;
+        let mut y = bounds.min.y;
+
+        match self {
+            Alignment::TopLeft => {}
+            Alignment::TopRight => x += bounds.width() - size.width,
+            Alignment::BottomLeft => y += bounds.height() - size.height,
+            Alignment::BottomRight => {
+                x += bounds.width() - size.width;
+                y += bounds.height() - size.height;
+            }
+            Alignment::Center => {
+                // SAFETY: Division by non-zero value
+                x += (bounds.width() - size.width)
+                    .checked_div_value(2.0)
+                    .unwrap();
+                // SAFETY: Division by non-zero value
+                y += (bounds.height() - size.height)
+                    .checked_div_value(2.0)
+                    .unwrap();
+            }
+            Alignment::CenterLeft => {
+                // SAFETY: Division by non-zero value
+                y += (bounds.height() - size.height)
+                    .checked_div_value(2.0)
+                    .unwrap();
+            }
+            Alignment::CenterRight => {
+                // SAFETY: Division by non-zero value
+                x += bounds.width() - size.width;
+                // SAFETY: Division by non-zero value
+                y += (bounds.height() - size.height)
+                    .checked_div_value(2.0)
+                    .unwrap();
+            }
+            Alignment::CenterTop => {
+                // SAFETY: Division by non-zero value
+                x += (bounds.width() - size.width)
+                    .checked_div_value(2.0)
+                    .unwrap();
+            }
+            Alignment::CenterBottom => {
+                // SAFETY: Division by non-zero value
+                x += (bounds.width() - size.width)
+                    .checked_div_value(2.0)
+                    .unwrap();
+                // SAFETY: Division by non-zero value
+                y += bounds.height() - size.height;
+            }
+        }
+
+        LogicalPixelsRect::with_size(LogicalPixelsPoint::new(x, y), size)
     }
 }
 
