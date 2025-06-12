@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use zintl_render_math::{
-    Alignment, InLogicalScale, InPhysicalScale, LogicalPixels, LogicalPixelsPoint,
-    LogicalPixelsRect, LogicalPixelsSize, PhysicalPixels, PhysicalPixelsF, PhysicalPixelsFPoint,
-    PhysicalPixelsFRect, PhysicalPixelsFSize, PhysicalPixelsRect, PhysicalPixelsSize, ScaleFactor,
+    Alignment, InLogicalScale, InPhysicalScale, LogicalPixels, LogicalPixelsRect, PhysicalPixels,
+    PhysicalPixelsF, PhysicalPixelsFPoint, PhysicalPixelsFRect, PhysicalPixelsFSize,
+    PhysicalPixelsRect, PhysicalPixelsSize, ScaleFactor,
 };
 
 use crate::texture::Atlas;
@@ -266,7 +266,7 @@ impl Typesetter {
         text: &str,
         font: &Font,
         bounds: LogicalPixelsRect,
-        text_alignment: TextAlignment,
+        _text_alignment: TextAlignment,
         alignment: Alignment,
         scale_factor: &ScaleFactor,
     ) -> Galley {
@@ -304,7 +304,7 @@ impl Typesetter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zintl_render_math::ScaleFactor;
+    use zintl_render_math::{LogicalPixelsPoint, ScaleFactor};
 
     #[test]
     fn galley_logical_rect() {
