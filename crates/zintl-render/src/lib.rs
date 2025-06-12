@@ -8,7 +8,7 @@ use winit::{
     window::{Window, WindowId},
 };
 
-use zintl_render_math::{LogicalPixelsPoint, ScaleFactor, Viewport};
+use zintl_render_math::{Alignment, LogicalPixelsPoint, LogicalPixelsRect, ScaleFactor, Viewport};
 use zintl_ui::{app::App, render::RenderContent};
 
 pub mod layout;
@@ -67,7 +67,7 @@ impl<'a> Application<'a> {
         };
         let mut tessellation_jobs = Vec::new();
 
-        let family = self
+        let font = self
             .typecase
             .get_font(self.system_font.clone())
             .expect("Failed to get system font family");
@@ -76,16 +76,21 @@ impl<'a> Application<'a> {
             .iter()
             .for_each(|content| match content {
                 RenderContent::Text(text) => {
-                    let atlas_size = family.get_atlas_size();
-                    let pixels = family.get_atlas_pixels();
+                    let atlas_size = font.get_atlas_size();
+                    let pixels = font.get_atlas_pixels();
                     let _ = wgpu.register_texture_with_id(0, pixels, atlas_size);
 
                     // TODO
                     #[allow(unused)]
                     let galley = self.typesetter.compose(
                         text,
-                        &family,
-                        LogicalPixelsPoint::new(0.0.into(), 0.0.into()),
+                        &font,
+                        LogicalPixelsRect::new(
+                            LogicalPixelsPoint::zero(),
+                            LogicalPixelsPoint::new(800.0.into(), 600.0.into()),
+                        ),
+                        text::TextAlignment::Left,
+                        Alignment::TopLeft,
                         &self.viewport.scale_factor,
                     );
                     tessellation_jobs.push(tessellator::TessellationJob::Galley(galley));

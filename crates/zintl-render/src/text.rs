@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use zintl_render_math::{
-    InLogicalScale, InPhysicalScale, LogicalPixels, LogicalPixelsPoint, LogicalPixelsRect,
-    LogicalPixelsSize, PhysicalPixels, PhysicalPixelsF, PhysicalPixelsFPoint, PhysicalPixelsFRect,
-    PhysicalPixelsFSize, PhysicalPixelsRect, PhysicalPixelsSize, ScaleFactor,
+    Alignment, InLogicalScale, InPhysicalScale, LogicalPixels, LogicalPixelsPoint,
+    LogicalPixelsRect, LogicalPixelsSize, PhysicalPixels, PhysicalPixelsF, PhysicalPixelsFPoint,
+    PhysicalPixelsFRect, PhysicalPixelsFSize, PhysicalPixelsRect, PhysicalPixelsSize, ScaleFactor,
 };
 
 use crate::texture::Atlas;
@@ -237,11 +237,19 @@ pub struct PositionedGlyph {
     pub rect: PhysicalPixelsFRect,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum TextAlignment {
+    #[default]
+    Left,
+    Center,
+    Right,
+}
+
 /// Composed glyphs, ready for rendering.
 #[derive(Clone, Debug)]
 pub struct Galley {
     pub glyphs: Vec<PositionedGlyph>,
-    pub rect: PhysicalPixelsFRect,
+    pub rect: LogicalPixelsRect,
 }
 
 #[derive(Clone, Debug)]
@@ -257,16 +265,13 @@ impl Typesetter {
         &self,
         text: &str,
         font: &Font,
-        position: LogicalPixelsPoint,
+        bounds: LogicalPixelsRect,
+        text_alignment: TextAlignment,
+        alignment: Alignment,
         scale_factor: &ScaleFactor,
     ) -> Galley {
-        // Using the position as a physical pixel point
-        let position = PhysicalPixelsFPoint::new(
-            position.x.in_physical_scale(scale_factor),
-            position.y.in_physical_scale(scale_factor),
-        );
         let mut glyphs = Vec::new();
-        let mut cursor = position.clone();
+        let mut cursor = PhysicalPixelsFPoint::zero();
         let mut size: PhysicalPixelsFSize = PhysicalPixelsFSize::default();
         let mut last_glyph_id = None;
         for c in text.chars() {
@@ -288,9 +293,45 @@ impl Typesetter {
             cursor.x += glyph.rect.width;
             size.width += glyph.rect.width;
         }
+
         Galley {
             glyphs,
-            rect: PhysicalPixelsFRect::with_size(position, size),
+            rect: alignment.align_size(bounds, size.in_logical_scale(&scale_factor)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use zintl_render_math::ScaleFactor;
+
+    #[test]
+    fn galley_logical_rect() {
+        let scale_factor = ScaleFactor::new(1.0, 1.5);
+        let font = Font::new(
+            ab_glyph::FontArc::try_from_slice(include_bytes!(
+                "../../../assets/inter/Inter-Regular.ttf"
+            ))
+            .unwrap(),
+            "Inter".to_string(),
+            16.0.into(),
+            scale_factor,
+        );
+        let typesetter = Typesetter::new();
+        let bounds = LogicalPixelsRect::new(
+            LogicalPixelsPoint::new(0.0.into(), 0.0.into()),
+            LogicalPixelsPoint::new(100.0.into(), 100.0.into()),
+        );
+        let galley = typesetter.compose(
+            "Hello",
+            &font,
+            bounds,
+            TextAlignment::Left,
+            Alignment::TopLeft,
+            &scale_factor,
+        );
+        assert_eq!(galley.rect.height(), 16.0.into());
+        assert_eq!(galley.glyphs[0].glyph.rect.height, (16.0 * 1.5).into());
     }
 }
