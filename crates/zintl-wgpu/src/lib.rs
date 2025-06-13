@@ -1,14 +1,16 @@
-use std::{borrow::Cow, fmt::Display, sync::Arc};
+use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use wgpu::util::DeviceExt;
-use winit::window::Window;
-
+use zintl_render::mesh::Mesh;
 use zintl_render_math::Mat4;
+use zintl_render_math::{
+    PhysicalPixelsFPoint, PhysicalPixelsPoint, PhysicalPixelsSize, TexturePoint, Viewport,
+};
 
-use std::collections::HashMap;
+pub trait WindowHandle: HasWindowHandle + HasDisplayHandle + Sync + Send {}
 
-use crate::mesh::Mesh;
-use crate::scaling::{DevicePointF32, DeviceSize, TexturePoint, Viewport};
+impl<T: HasWindowHandle + HasDisplayHandle + Sync + Send> WindowHandle for T {}
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -18,16 +20,47 @@ pub struct Uniforms {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct DevicePoint {
+    pub x: f32,
+    pub y: f32,
+}
+
+impl From<PhysicalPixelsFPoint> for DevicePoint {
+    #[inline]
+    fn from(point: PhysicalPixelsFPoint) -> Self {
+        Self {
+            x: point.x.value(),
+            y: point.y.value(),
+        }
+    }
+}
+
+impl From<PhysicalPixelsPoint> for DevicePoint {
+    #[inline]
+    fn from(point: PhysicalPixelsPoint) -> Self {
+        Self {
+            x: point.x.value() as f32,
+            y: point.y.value() as f32,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct DeviceVertex {
-    pub position: DevicePointF32,
+    pub position: DevicePoint,
     pub tex_coords: TexturePoint,
 }
 
 impl DeviceVertex {
-    pub fn from_vertex(vertex: &crate::mesh::Vertex, texture_size: DeviceSize) -> Self {
+    pub fn from_vertex(
+        vertex: &zintl_render::mesh::Vertex,
+        texture_size: PhysicalPixelsSize,
+    ) -> Self {
         Self {
             position: vertex.position.into(),
-            tex_coords: TexturePoint::from_device_point(vertex.tex_coords, texture_size),
+            // TODO: Handle div zero errors
+            tex_coords: TexturePoint::from_physical_point(vertex.tex_coords, texture_size).unwrap(),
         }
     }
 }
@@ -41,7 +74,7 @@ pub struct DeviceMesh {
 }
 
 impl DeviceMesh {
-    pub fn from_mesh(mesh: Mesh, texture_size: DeviceSize) -> Self {
+    pub fn from_mesh(mesh: Mesh, texture_size: PhysicalPixelsSize) -> Self {
         let vertices = mesh
             .vertices
             .into_iter()
@@ -63,10 +96,10 @@ impl DeviceMesh {
 pub struct Texture {
     native_texture: wgpu::Texture,
     bind_group: wgpu::BindGroup,
-    size: DeviceSize,
+    size: PhysicalPixelsSize,
 }
 
-const FILL_RECT_SHADER_SRC: &str = include_str!("../shaders/fill_rect.wgsl");
+const FILL_RECT_SHADER_SRC: &str = include_str!("./shaders/fill_rect.wgsl");
 
 pub type TextureId = usize;
 
@@ -133,8 +166,8 @@ impl<'a> WgpuApplication<'a> {
     fn create_ortho_matrix(viewport: Viewport) -> Mat4 {
         cgmath::ortho(
             0.,
-            viewport.device_width as f32,
-            viewport.device_height as f32,
+            viewport.device_width.value() as f32,
+            viewport.device_height.value() as f32,
             0.,
             -1.,
             1.,
@@ -315,7 +348,11 @@ impl<'a> WgpuApplication<'a> {
         });
 
         let config = surface
-            .get_default_config(&adapter, viewport.device_width, viewport.device_height)
+            .get_default_config(
+                &adapter,
+                viewport.device_width.value(),
+                viewport.device_height.value(),
+            )
             .unwrap();
         surface.configure(&device, &config);
 
@@ -333,15 +370,15 @@ impl<'a> WgpuApplication<'a> {
         })
     }
 
-    pub async fn from_window(
-        window: Arc<Window>,
+    pub async fn from_window_handle<T: WindowHandle + 'a>(
+        window_handle: T,
         viewport: Viewport,
     ) -> WgpuApplicationResult<Self> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             ..Default::default()
         });
-        let surface_target = wgpu::SurfaceTarget::Window(Box::new(window.clone()));
+        let surface_target = wgpu::SurfaceTarget::Window(Box::new(window_handle));
         let surface = match instance.create_surface(surface_target) {
             Ok(s) => s,
             Err(..) => return Err(WgpuApplicationError::CreateSurfaceError),
@@ -361,7 +398,7 @@ impl<'a> WgpuApplication<'a> {
             DeviceMesh::from_mesh(mesh.clone(), texture.size)
         } else {
             println!("No texture for mesh, using default size");
-            DeviceMesh::from_mesh(mesh.clone(), DeviceSize::new(1, 1)) // Not zero
+            DeviceMesh::from_mesh(mesh.clone(), PhysicalPixelsSize::new(1.into(), 1.into()))
         };
         self.draw_device_mesh(device_mesh, rpass);
 
@@ -434,8 +471,8 @@ impl<'a> WgpuApplication<'a> {
     }
 
     fn reconfigure_surface_size(&mut self) {
-        self.config.width = self.viewport.device_width;
-        self.config.height = self.viewport.device_height;
+        self.config.width = self.viewport.device_width.value();
+        self.config.height = self.viewport.device_height.value();
         let ortho = Self::create_ortho_matrix(self.viewport);
         let uniforms = Uniforms {
             ortho: ortho.into(),
@@ -445,7 +482,7 @@ impl<'a> WgpuApplication<'a> {
         self.surface.configure(&self.device, &self.config);
     }
 
-    pub fn register_texture(&mut self, pixels: Vec<u8>, size: DeviceSize) -> usize {
+    pub fn register_texture(&mut self, pixels: Vec<u8>, size: PhysicalPixelsSize) -> usize {
         let id = self.textures.len();
         self.register_texture_with_id(id, pixels, size)
     }
@@ -454,11 +491,11 @@ impl<'a> WgpuApplication<'a> {
         &mut self,
         id: usize,
         pixels: Vec<u8>,
-        size: DeviceSize,
+        size: PhysicalPixelsSize,
     ) -> usize {
         let texture_size = wgpu::Extent3d {
-            width: size.width,
-            height: size.height,
+            width: size.width.value(),
+            height: size.height.value(),
             depth_or_array_layers: 1,
         };
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
@@ -483,8 +520,8 @@ impl<'a> WgpuApplication<'a> {
             &pixels,
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(4 * size.width),
-                rows_per_image: Some(size.height),
+                bytes_per_row: Some(4 * size.width.value()),
+                rows_per_image: Some(size.height.value()),
             },
             texture_size,
         );

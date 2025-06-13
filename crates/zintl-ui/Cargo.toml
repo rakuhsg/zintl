@@ -8,3 +8,4 @@ authors.workspace = true
 
 [dev-dependencies]
 zintl-render.workspace = true
+zintl-run.workspace = true

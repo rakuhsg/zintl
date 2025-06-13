@@ -11,11 +11,6 @@ default = ["wgpu"]
 [dependencies]
 zintl-ui.workspace = true
 zintl-render-math.workspace = true
-winit = "0.30"
-wgpu = "25"
-pollster = "0.3"
-font-kit = "0.14"
-pathfinder_geometry = "0.5"
 bytemuck.workspace = true
 ab_glyph = "0.2.29"
 cgmath.workspace = true

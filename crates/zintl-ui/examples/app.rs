@@ -1,4 +1,4 @@
-use zintl_render::run_app;
+use zintl_run::run_app;
 use zintl_ui::app::{App, Label};
 
 fn main() {

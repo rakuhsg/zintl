@@ -5,3 +5,9 @@ edition = "2024"
 authors.workspace = true
 
 [dependencies]
+wgpu = "25"
+zintl-render.workspace = true
+zintl-render-math.workspace = true
+bytemuck.workspace = true
+cgmath.workspace = true
+raw-window-handle = "0.6"
