@@ -1,3 +1,6 @@
+---
+title: Zintl UI
+---
 # Zintl UI - Building GUI with Rust
 
 ## Status:WIP
