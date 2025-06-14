@@ -1,0 +1,3 @@
+SUBDOMAIN zintl-ui
+TEMPLATE template docs/template.html
+RNDRMDDIR template docs /
