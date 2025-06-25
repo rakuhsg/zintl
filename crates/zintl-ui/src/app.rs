@@ -131,7 +131,7 @@ pub struct Label {
 }
 
 impl Label {
-    pub fn new(text: &str) -> Self {
+    pub fn new(text: String) -> Self {
         let context = Context::from_render_object(RenderObject::new(
             RenderContent::Text(text.to_string()),
             Position::new(0., 0.),
@@ -145,6 +145,27 @@ impl Label {
 }
 
 impl ComposableView for Label {
+    fn context(&self) -> &Context {
+        &self.context
+    }
+    fn compose(&mut self) -> impl View {
+        Stack::new()
+    }
+}
+
+pub struct Button {
+    context: Context,
+}
+
+impl Button {
+    pub fn new() -> Self {
+        Button {
+            context: Context::new(),
+        }
+    }
+}
+
+impl ComposableView for Button {
     fn context(&self) -> &Context {
         &self.context
     }
