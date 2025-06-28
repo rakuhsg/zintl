@@ -30,7 +30,7 @@ impl<'a> Application<'a> {
     pub fn new(app: App) -> Self {
         let scale_factor = ScaleFactor::new(96.0, 1.25);
         let mut typecase = text::Typecase::new(scale_factor.clone());
-        let fam = include_bytes!("../../../assets/inter/Inter-Regular.ttf").to_vec();
+        let fam = include_bytes!("../assets/inter/Inter-Regular.ttf").to_vec();
         typecase.load_font("Inter".to_string(), fam);
         Self {
             root: app,
