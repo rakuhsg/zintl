@@ -7,18 +7,18 @@ authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
 version = "0.0.1-alpha.1"
 
 [workspace.dependencies]
-zintl = "0.0.1-alpha.1"
-zintl-ui = "0.0.1-alpha.1"
-zintl-ui-app = "0.0.1-alpha.1"
-zintl-ui-macro = "0.0.1-alpha.1"
-zintl-ui-view = "0.0.1-alpha.1"
-zintl-ui-render = "0.0.1-alpha.1"
-zintl-ui-state = "0.0.1-alpha.1"
-zintl-render = "0.0.1-alpha.1"
-zintl-render-math = "0.0.1-alpha.1"
-zintl-run = "0.0.1-alpha.1"
-zintl-wgpu = "0.0.1-alpha.1"
-zintl-winit = "0.0.1-alpha.1"
-zintl-widget = "0.0.1-alpha.1"
+zintl = { version = "0.0.1-alpha.1", path = "crates/zintl" }
+zintl-ui = { version = "0.0.1-alpha.1", path = "crates/zintl-ui" }
+zintl-ui-app = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-app" }
+zintl-ui-macro = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-macro" }
+zintl-ui-view = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-view" }
+zintl-ui-render = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-render" }
+zintl-ui-state = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-state" }
+zintl-render = { version = "0.0.1-alpha.1", path = "crates/zintl-render" }
+zintl-render-math = { version = "0.0.1-alpha.1", path = "crates/zintl-render-math" }
+zintl-run = { version = "0.0.1-alpha.1", path = "crates/zintl-run" }
+zintl-wgpu = { version = "0.0.1-alpha.1", path = "crates/zintl-wgpu" }
+zintl-winit = { version = "0.0.1-alpha.1", path = "crates/zintl-winit" }
+zintl-widget = { version = "0.0.1-alpha.1", path = "crates/zintl-widget" }
 bytemuck = { version = "=1.23", features = ["derive"] }
 cgmath = "0.18"

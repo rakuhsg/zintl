@@ -148,14 +148,11 @@ impl Font {
                     texture_bounds,
                 }
             } else {
-                println!("Failed to get outline for glyph: {:?}", id);
                 return Glyph::default();
             }
         };
 
         let glyph = Glyph { id, rect };
-
-        println!("Glyph: {} {:?}", c, glyph);
 
         // Cache the glyph
         // TODO: Error handling

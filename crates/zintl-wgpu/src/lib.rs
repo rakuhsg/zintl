@@ -388,7 +388,6 @@ impl<'a> WgpuApplication<'a> {
     }
 
     fn draw_mesh(&mut self, mesh: Mesh, rpass: &mut wgpu::RenderPass<'_>) {
-        println!("drw");
         if mesh.vertices.is_empty() && mesh.indices.is_empty() {
             return;
         }
@@ -397,7 +396,6 @@ impl<'a> WgpuApplication<'a> {
 
             DeviceMesh::from_mesh(mesh.clone(), texture.size)
         } else {
-            println!("No texture for mesh, using default size");
             DeviceMesh::from_mesh(mesh.clone(), PhysicalPixelsSize::new(1.into(), 1.into()))
         };
         self.draw_device_mesh(device_mesh, rpass);
@@ -409,7 +407,6 @@ impl<'a> WgpuApplication<'a> {
 
     // TODO
     fn draw_device_mesh(&mut self, mesh: DeviceMesh, rpass: &mut wgpu::RenderPass<'_>) {
-        println!("mesh: {:?}", mesh);
         if !mesh.vertices.is_empty() || !mesh.indices.is_empty() {
             if let Some(texture_id) = mesh.texture_id {
                 let texture = self.textures.get(&texture_id).expect("Texture not found");
