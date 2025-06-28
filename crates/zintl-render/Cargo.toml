@@ -1,6 +1,8 @@
 [package]
 name = "zintl-render"
 edition = "2024"
+description.workspace = true
+license.workspace = true
 authors.workspace = true
 version.workspace = true
 

@@ -3,6 +3,8 @@ resolver = "3"
 members = ["crates/zintl-ui", "crates/zintl-render", "crates/zintl-render-math", "crates/zintl-run", "crates/zintl-wgpu", "crates/zintl-winit", "crates/zintl-ui-state", "crates/zintl-ui-macro", "crates/zintl-ui-view", "crates/zintl-ui-render", "crates/zintl-ui-app", "crates/zintl-widget", "crates/zintl"]
 
 [workspace.package]
+license = "Apache-2.0"
+description = "Powerful yet simple GUI toolkit for Rust."
 authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
 version = "0.0.1-alpha.1"
 
