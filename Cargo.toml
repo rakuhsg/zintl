@@ -1,16 +1,24 @@
 [workspace]
 resolver = "3"
-members = ["crates/zintl-ui", "crates/zintl-render", "crates/zintl-render-math", "crates/zintl-run", "crates/zintl-wgpu", "crates/zintl-winit"]
+members = ["crates/zintl-ui", "crates/zintl-render", "crates/zintl-render-math", "crates/zintl-run", "crates/zintl-wgpu", "crates/zintl-winit", "crates/zintl-ui-state", "crates/zintl-ui-macro", "crates/zintl-ui-view", "crates/zintl-ui-render", "crates/zintl-ui-app", "crates/zintl-widget", "crates/zintl"]
 
 [workspace.package]
 authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
+version = "0.0.1-alpha.1"
 
 [workspace.dependencies]
+zintl = { path = "crates/zintl" }
 zintl-ui = { path = "crates/zintl-ui" }
+zintl-ui-app = { path = "crates/zintl-ui-app" }
+zintl-ui-macro = { path = "crates/zintl-ui-macro" }
+zintl-ui-view = { path = "crates/zintl-ui-view" }
+zintl-ui-render = { path = "crates/zintl-ui-render" }
+zintl-ui-state = { path = "crates/zintl-ui-state" }
 zintl-render = { path = "crates/zintl-render" }
 zintl-render-math = { path = "crates/zintl-render-math" }
 zintl-run = { path = "crates/zintl-run" }
 zintl-wgpu = { path = "crates/zintl-wgpu" }
 zintl-winit = { path = "crates/zintl-winit" }
+zintl-widget = { path = "crates/zintl-widget" }
 bytemuck = { version = "=1.23", features = ["derive"] }
 cgmath = "0.18"

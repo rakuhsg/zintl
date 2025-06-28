@@ -2415,8 +2415,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "zintl"
+version = "0.0.1-alpha.1"
+dependencies = [
+ "zintl-render",
+ "zintl-run",
+ "zintl-ui",
+ "zintl-widget",
+]
+
+[[package]]
 name = "zintl-render"
-version = "0.1.0"
+version = "0.0.1-alpha.1"
 dependencies = [
  "ab_glyph",
  "bytemuck",
@@ -2427,7 +2437,7 @@ dependencies = [
 
 [[package]]
 name = "zintl-render-math"
-version = "0.1.0"
+version = "0.0.1-alpha.1"
 dependencies = [
  "bytemuck",
  "cgmath",
@@ -2436,7 +2446,7 @@ dependencies = [
 
 [[package]]
 name = "zintl-run"
-version = "0.1.0"
+version = "0.0.1-alpha.1"
 dependencies = [
  "pollster",
  "winit",
@@ -2448,15 +2458,53 @@ dependencies = [
 
 [[package]]
 name = "zintl-ui"
-version = "0.1.0"
+version = "0.0.1-alpha.1"
 dependencies = [
- "zintl-render",
  "zintl-run",
+ "zintl-ui-app",
+ "zintl-ui-macro",
+ "zintl-ui-render",
+ "zintl-ui-state",
+ "zintl-ui-view",
+]
+
+[[package]]
+name = "zintl-ui-app"
+version = "0.0.1-alpha.1"
+dependencies = [
+ "zintl-ui-render",
+ "zintl-ui-view",
+]
+
+[[package]]
+name = "zintl-ui-macro"
+version = "0.0.1-alpha.1"
+dependencies = [
+ "zintl-ui-view",
+]
+
+[[package]]
+name = "zintl-ui-render"
+version = "0.0.1-alpha.1"
+
+[[package]]
+name = "zintl-ui-state"
+version = "0.0.1-alpha.1"
+dependencies = [
+ "zintl-ui-render",
+ "zintl-ui-view",
+]
+
+[[package]]
+name = "zintl-ui-view"
+version = "0.0.1-alpha.1"
+dependencies = [
+ "zintl-ui-render",
 ]
 
 [[package]]
 name = "zintl-wgpu"
-version = "0.1.0"
+version = "0.0.1-alpha.1"
 dependencies = [
  "bytemuck",
  "cgmath",
@@ -2467,5 +2515,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "zintl-widget"
+version = "0.0.1-alpha.1"
+dependencies = [
+ "zintl-ui",
+]
+
+[[package]]
 name = "zintl-winit"
-version = "0.1.0"
+version = "0.0.1-alpha.1"

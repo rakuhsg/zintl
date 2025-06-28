@@ -2,37 +2,51 @@
 
 ## Status:WIP
 
-| [Source code](https://github.com/zintl-org/zintl-ui) | [Crates.io](https://crates.io/crates/zintl-ui) | [Docs](https://docs.rs/zintl-ui/latest/zintl-ui) |
+| [Source code](https://github.com/rakuhsg/zintl) | [Crates.io](https://crates.io/crates/zintl) | [Docs](https://docs.rs/zintl/latest/zintl) |
 
 ## Rapidly build GUI applications in Rust
 
+### Stateful counter app example
+
 ```rs
-use zintl::prelude::*;
+use zintl::{Context, Composable, marker, StatefulView};
+use shigure::{Button, Label, VStack};
 use zintl_run::run_app;
 
 #[derive(Default)]
-struct HelloWorldApp {
+struct HelloWorld {
     count: usize,
+    context: Context,
 }
 
-impl ComposableView for HelloWorldApp {
+impl HelloWorld {
+    pub fn new(count: usize) -> Self {
+        HelloWorld {
+            count,
+            ...Default::default(),
+        }
+    }
+}
+
+impl Composable for HelloWorld {
     fn compose(&self) -> impl View {
-        VStack::new().children([
+        VStack::new().children(v![
             Label::new("Hello, world!"),
-            Button::new(format!("Click me! {}", self.count))
-              .on_click(move |_| {
-                  update(move |ctx| {
-                      self.count += 1;
-                  });
-              }),
+            Label::new(format!("Count: {}", self.count),
+            Button::new("Increment").on_click(||
+                self.count += 1;
+            })
         ])
     }
 }
 
-#[tokio::main]
-async fn main() {
-    let app = App::new().root(HelloWorldApp::default());
-    await run_app(app);
+fn main() {
+    let app = App::new(
+        StatefulView::new::<usize>(marker!(), 0, |value| {
+            HelloWorld::new(value)
+        }),
+    );
+    run_app(app);
 }
 ```
 

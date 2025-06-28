@@ -62,7 +62,7 @@ impl RenderObject {
         }
     }
 
-    pub fn add_child(&self, child: RenderObject) {
-        self.children.borrow_mut().push(child);
+    pub fn set_children(&self, children: Vec<RenderObject>) {
+        self.children.replace(children);
     }
 }
