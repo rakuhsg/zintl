@@ -1,10 +1,8 @@
 [package]
-name = "zintl-render-math"
+name = "zintl-widget"
 edition = "2024"
 authors.workspace = true
 version.workspace = true
 
 [dependencies]
-bytemuck.workspace = true
-cgmath.workspace = true
-paste = "1.0"
+zintl-ui.workspace = true

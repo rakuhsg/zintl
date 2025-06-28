@@ -1,37 +1,61 @@
+use std::any::Any;
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use crate::render::{Metrics, Position, RenderContent, RenderObject};
 
 #[derive(Clone, Debug)]
-pub struct App {
-    root: RenderObject,
+pub struct Storage {
+    data: Arc<HashMap<String, Arc<dyn Any>>>,
 }
 
-impl App {
-    pub fn new(root: impl View) -> Self {
-        App {
-            root: root.get_context().render(),
+impl Storage {
+    pub fn new() -> Self {
+        Storage {
+            data: HashMap::new().into(),
         }
+    }
+}
+
+pub struct ViewBuilder {}
+
+#[derive(Clone, Debug)]
+pub struct App<T>
+where
+    T: Fn(&mut Storage) -> ViewBuilder,
+{
+    storage: Storage,
+    generator: T,
+}
+
+impl<T: Fn(&mut Storage) -> ViewBuilder> App<T> {
+    pub fn new(generator: T) -> Self {
+        let mut storage = Storage::new();
+        App { storage, generator }
     }
 
     pub fn get_render_object(&self) -> RenderObject {
-        self.root.clone()
+        todo!()
+        //self.root.clone()
     }
 }
 
 /// The context consists of a set of style properties and layouts to render views.
+#[derive(Default)]
 pub struct Context {
     pub render_object: RenderObject,
+    pub storage: Option<Arc<HashMap<String, Arc<dyn Any>>>>,
 }
 
 impl Context {
     pub fn new() -> Self {
         Context {
             render_object: RenderObject::default(),
+            storage: None,
         }
     }
-    pub fn from_render_object(render_object: RenderObject) -> Self {
-        Context { render_object }
-    }
     pub fn set_style_property(&self) {}
+    pub fn insert_pending_storage<T>(&mut self, key: String, value: T) {}
     pub fn render(&self) -> RenderObject {
         self.render_object.clone()
     }
@@ -60,6 +84,7 @@ pub trait ComposableView: Sized {
     fn compose(&mut self) -> impl View;
 
     fn children<const N: usize>(self, children: [impl View; N]) -> Self {
+        let func = move || println!("{children:?}");
         for child in children {
             self.context()
                 .render_object
@@ -69,15 +94,16 @@ pub trait ComposableView: Sized {
     }
 }
 
-impl<T: ComposableView> View for T {
-    fn get_context(&self) -> &Context {
-        self.context()
-    }
-}
-
 impl<T: ComposableView> Composable for T {
     fn view(&mut self) -> impl View {
         self.compose()
+    }
+}
+
+impl<T: ComposableView> View for T {
+    fn get_context(&self) -> &Context {
+        let view = self.view();
+        self.context()
     }
 }
 
@@ -148,9 +174,7 @@ impl ComposableView for Label {
     fn context(&self) -> &Context {
         &self.context
     }
-    fn compose(&mut self) -> impl View {
-        Stack::new()
-    }
+    fn compose(&mut self) -> impl View {}
 }
 
 pub struct Button {

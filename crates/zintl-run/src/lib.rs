@@ -9,7 +9,7 @@ use winit::{
 
 use zintl_render::{tessellator, text};
 use zintl_render_math::{Alignment, LogicalPixelsPoint, LogicalPixelsRect, ScaleFactor, Viewport};
-use zintl_ui::{app::App, render::RenderContent};
+use zintl_ui::{App, RenderContent};
 use zintl_wgpu::WgpuApplication;
 
 #[allow(unused)]

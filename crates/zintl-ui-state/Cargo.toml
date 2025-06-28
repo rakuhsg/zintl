@@ -1,10 +1,9 @@
 [package]
-name = "zintl-render-math"
+name = "zintl-ui-state"
 edition = "2024"
 authors.workspace = true
 version.workspace = true
 
 [dependencies]
-bytemuck.workspace = true
-cgmath.workspace = true
-paste = "1.0"
+zintl-ui-view.workspace = true
+zintl-ui-render.workspace = true
