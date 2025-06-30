@@ -1,3 +1,7 @@
-SUBDOMAIN zintl-ui
-TEMPLATE template docs/template.html
-RNDRMDDIR template docs /
+SUBDOMAIN zintl
+COPYDIR docs/assets /assets
+TEMPLATE t_news docs/t_news.html
+TEMPLATE t_doc docs/t_doc.html
+TEMPLATE t_index docs/t_index.html
+RNDRMDDIR t_news docs/news /news t_index docs/index.md /index.html
+RNDRMDDIR t_doc docs/doc /

@@ -1,0 +1,134 @@
+<html>
+    <head>
+        <title>{{.Title}} - Zintl</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: Inter, Adwaita Sans, SF Pro, Segoe UI, Helvetica, Arial, sans-serif;
+                background-color: #e1e6d3;
+            }
+            h1 {
+                font-size: 2.5em;
+                margin-bottom: 1.5em;
+            }
+            h2 {
+                font-size: 1.75em;
+                margin-bottom: 0.5em;
+            }
+            h3 {
+                font-size: 1.25em;
+                margin-bottom: 0.5em;
+            }
+            h4, h5, h6 {
+                font-size: 1em;
+                margin-bottom: 0.5em;
+            }
+            p {
+                font-size: 1em;
+                line-height: 1.6;
+                margin-bottom: 1.2em;
+            }
+            pre {
+                display: block;
+                margin: 1em 0;
+                border: 1px solid #ccc;
+                padding: 10px;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-weight: 600;
+                color: #2b2e22;
+            }
+            p {
+                color: #0a0a09;
+            }
+            a {
+                color: #007bff;
+                text-decoration: none;
+            }
+            b, strong {
+                font-weight: bold;
+            }
+            i, em {
+                font-style: italic;
+            }
+            pre {
+                border-radius: 5px;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #1a1716;
+                    color: #e0e0e0;
+                }
+                h1, h2, h3, h4, h5, h6 {
+                    color: #e8c0a5;
+                }
+                p {
+                    color: #e0e0e0;
+                }
+                a {
+                    color: #8690fc;
+                }
+                pre {
+                    border: 1px solid #444;
+                }
+            }
+            .header {
+                padding-top: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 25px;
+                max-width: 1000px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .header .logo {
+                width: 200px;
+            }
+            .header .menu {
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 25px;
+                list-style: none;
+            }
+            .article {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="header">
+            <div>
+                <a href="/">
+                    <picture>
+                        <source srcset="/assets/logo_l.png" media="(prefers-color-scheme: light)"/>
+                        <img class="logo" src="/assets/logo.png" alt="Zintl Logo" />
+                    </picture>
+                </a>
+            </div>
+            <ul class="menu">
+                <li><a href="/quick-start.html">Quick Start</a></li>
+                <li><a href="https://docs.rs/zintl/latest/zintl">Reference</a></li>
+                <li><a href="https://github.com/rakuhsg/zintl">GitHub</a></li>
+            </ul>
+       </header>
+       <article class="article">
+            {{.Content}}
+            <h2>Latest News</h2>
+            <ul>
+            {{range $index, $page := .Links}}
+            <li><a href="{{$page.Link}}">{{$page.Title}}</a></li>
+            {{end}}
+            </ul>
+        </article>
+    </body>
+</html>
