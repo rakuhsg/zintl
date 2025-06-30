@@ -2416,7 +2416,7 @@ dependencies = [
 
 [[package]]
 name = "zintl"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-render",
  "zintl-run",
@@ -2426,7 +2426,7 @@ dependencies = [
 
 [[package]]
 name = "zintl-render"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "ab_glyph",
  "bytemuck",
@@ -2437,7 +2437,7 @@ dependencies = [
 
 [[package]]
 name = "zintl-render-math"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "bytemuck",
  "cgmath",
@@ -2446,7 +2446,7 @@ dependencies = [
 
 [[package]]
 name = "zintl-run"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "pollster",
  "winit",
@@ -2458,7 +2458,7 @@ dependencies = [
 
 [[package]]
 name = "zintl-ui"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-run",
  "zintl-ui-app",
@@ -2470,7 +2470,7 @@ dependencies = [
 
 [[package]]
 name = "zintl-ui-app"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-ui-render",
  "zintl-ui-view",
@@ -2478,18 +2478,18 @@ dependencies = [
 
 [[package]]
 name = "zintl-ui-macro"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-ui-view",
 ]
 
 [[package]]
 name = "zintl-ui-render"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 
 [[package]]
 name = "zintl-ui-state"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-ui-render",
  "zintl-ui-view",
@@ -2497,14 +2497,14 @@ dependencies = [
 
 [[package]]
 name = "zintl-ui-view"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-ui-render",
 ]
 
 [[package]]
 name = "zintl-wgpu"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "bytemuck",
  "cgmath",
@@ -2516,11 +2516,11 @@ dependencies = [
 
 [[package]]
 name = "zintl-widget"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-ui",
 ]
 
 [[package]]
 name = "zintl-winit"
-version = "0.0.1-alpha.1"
+version = "0.0.1-alpha.2"

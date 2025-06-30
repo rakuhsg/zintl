@@ -1,14 +1,14 @@
 use crate::context::Context;
 use crate::storage::Storage;
 
-use zintl_ui_render::RenderObject;
+use zintl_ui_render::{RenderNode, RenderObject};
 
 // A renderable component that has context.
 pub trait View: Sized {
     fn get_context(&self) -> &Context;
 
-    fn render(&mut self, storage: &mut Storage) -> RenderObject {
-        self.get_context().render(storage)
+    fn render(&mut self, _: &mut Storage) -> RenderNode {
+        RenderNode::new(RenderObject::empty())
     }
 
     // TODO

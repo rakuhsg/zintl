@@ -49,7 +49,6 @@ pub struct RenderObject {
     pub content: RenderContent,
     pub position: Position,
     pub metrics: Metrics,
-    pub children: RefCell<Vec<RenderObject>>,
 }
 
 impl RenderObject {
@@ -58,11 +57,41 @@ impl RenderObject {
             content,
             position,
             metrics,
-            children: Vec::new().into(),
         }
     }
 
-    pub fn set_children(&self, children: Vec<RenderObject>) {
-        self.children.replace(children);
+    pub fn empty() -> Self {
+        RenderObject::new(RenderContent::Empty, Position::new(0., 0.), Metrics::Auto)
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RenderNode {
+    pub object: RenderObject,
+    pub inner: Option<Box<RenderNode>>,
+    pub child: Vec<RenderNode>,
+}
+
+impl RenderNode {
+    pub fn new(object: RenderObject) -> Self {
+        RenderNode {
+            object,
+            inner: None,
+            child: Vec::new(),
+        }
+    }
+
+    pub fn set_inner(&mut self, node: RenderNode) {
+        self.inner = Some(Box::new(node));
+    }
+
+    pub fn push_child(&mut self, child: RenderNode) {
+        self.child.push(child);
+    }
+}
+
+impl From<RenderObject> for RenderNode {
+    fn from(object: RenderObject) -> Self {
+        RenderNode::new(object)
     }
 }

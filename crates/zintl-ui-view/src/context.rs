@@ -1,9 +1,9 @@
 use std::cell::RefCell;
 
 use crate::storage::Storage;
-use zintl_ui_render::{Metrics, Position, RenderContent, RenderObject};
+use zintl_ui_render::{RenderNode, RenderObject};
 
-pub type Generator = Box<dyn Fn(&mut Storage) -> RenderObject>;
+pub type Generator = Box<dyn FnMut(&mut Storage) -> RenderNode>;
 
 /// The context consists of a set of style properties and layouts to render views.
 #[derive(Default)]
@@ -24,16 +24,13 @@ impl Context {
         }
     }
     pub fn set_style_property(&self) {}
-    pub fn render(&self, storage: &mut Storage) -> RenderObject {
-        let children = self.children.borrow();
-        let mut objs = Vec::new();
-        for child in &*children {
-            objs.push(child(storage));
+    pub fn render_children(&self, storage: &mut Storage) -> RenderNode {
+        let mut node = RenderNode::new(RenderObject::empty());
+        let mut children = self.children.borrow_mut();
+        for child in &mut *children {
+            node.push_child(child(storage));
         }
-        // TODO: Rendering itself
-        let robj = RenderObject::new(RenderContent::Empty, Position::new(0.0, 0.0), Metrics::Auto);
-        robj.set_children(objs);
-        robj
+        node
     }
     pub fn set_children(&self, children: Vec<Generator>) {
         self.children.replace(children);

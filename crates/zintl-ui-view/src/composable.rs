@@ -2,7 +2,7 @@ use crate::context::{Context, Generator};
 use crate::storage::Storage;
 use crate::view::View;
 
-use zintl_ui_render::RenderObject;
+use zintl_ui_render::{RenderNode, RenderObject};
 
 /// A view that implements the [`Composable`] trait.
 pub trait Composable: Sized {
@@ -20,8 +20,12 @@ impl<T: Composable> View for T {
         self.context()
     }
 
-    fn render(&mut self, storage: &mut Storage) -> RenderObject {
-        let obj = self.compose().render(storage);
-        obj
+    fn render(&mut self, storage: &mut Storage) -> RenderNode {
+        let mut node = RenderNode::new(RenderObject::empty());
+        node.set_inner(self.compose().render(storage));
+        println!("{:?}", node);
+        let child = self.get_context().render_children(storage);
+        node.push_child(child);
+        node
     }
 }

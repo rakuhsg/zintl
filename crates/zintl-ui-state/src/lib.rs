@@ -1,4 +1,4 @@
-use zintl_ui_render::RenderObject;
+use zintl_ui_render::RenderNode;
 use zintl_ui_view::{Context, Storage, View};
 
 pub struct State<T> {
@@ -20,6 +20,8 @@ impl<T> StatefulView<T> {
             state: initial,
         }
     }
+
+    //TODO: children
 }
 
 impl<T> View for StatefulView<T> {
@@ -27,7 +29,7 @@ impl<T> View for StatefulView<T> {
         &self.context
     }
 
-    fn render(&mut self, _storage: &mut Storage) -> RenderObject {
+    fn render(&mut self, _storage: &mut Storage) -> RenderNode {
         unimplemented!()
     }
 }
