@@ -1,4 +1,4 @@
-# Zintl UI - Building GUI with Rust
+# Zintl - Building GUI with Rust
 
 ## Status:WIP
 
@@ -9,9 +9,7 @@
 ### Stateful counter app example
 
 ```rs
-use zintl::{Context, Composable, marker, StatefulView};
-use shigure::{Button, Label, VStack};
-use zintl_run::run_app;
+use zintl::*;
 
 #[derive(Default)]
 struct HelloWorld {
