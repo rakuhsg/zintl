@@ -2421,6 +2421,7 @@ dependencies = [
  "zintl-render",
  "zintl-run",
  "zintl-ui",
+ "zintl-ui-macro",
  "zintl-widget",
 ]
 
@@ -2457,49 +2458,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "zintl-ui"
+name = "zintl-state"
 version = "0.0.1-alpha.2"
 dependencies = [
- "zintl-run",
- "zintl-ui-app",
- "zintl-ui-macro",
- "zintl-ui-render",
- "zintl-ui-state",
- "zintl-ui-view",
+ "zintl-ui",
 ]
 
 [[package]]
-name = "zintl-ui-app"
+name = "zintl-ui"
 version = "0.0.1-alpha.2"
-dependencies = [
- "zintl-ui-render",
- "zintl-ui-view",
-]
 
 [[package]]
 name = "zintl-ui-macro"
 version = "0.0.1-alpha.2"
 dependencies = [
- "zintl-ui-view",
-]
-
-[[package]]
-name = "zintl-ui-render"
-version = "0.0.1-alpha.2"
-
-[[package]]
-name = "zintl-ui-state"
-version = "0.0.1-alpha.2"
-dependencies = [
- "zintl-ui-render",
- "zintl-ui-view",
-]
-
-[[package]]
-name = "zintl-ui-view"
-version = "0.0.1-alpha.2"
-dependencies = [
- "zintl-ui-render",
+ "zintl-ui",
 ]
 
 [[package]]

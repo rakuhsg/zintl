@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
-use crate::storage::Storage;
-use zintl_ui_render::{RenderNode, RenderObject};
+use crate::render::{RenderNode, RenderObject};
+use crate::view::Storage;
 
 pub type Generator = Box<dyn FnMut(&mut Storage) -> RenderNode>;
 

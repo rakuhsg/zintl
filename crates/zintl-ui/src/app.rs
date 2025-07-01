@@ -1,5 +1,5 @@
-use zintl_ui_render::RenderNode;
-use zintl_ui_view::{Storage, View};
+use crate::render::RenderNode;
+use crate::view::{Storage, View};
 
 // TODO
 #[allow(unused)]
