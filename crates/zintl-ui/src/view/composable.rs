@@ -1,8 +1,8 @@
-use crate::context::{Context, Generator};
-use crate::storage::Storage;
+use crate::view::Storage;
 use crate::view::View;
+use crate::view::{Context, Generator};
 
-use zintl_ui_render::{RenderNode, RenderObject};
+use crate::render::{RenderNode, RenderObject};
 
 /// A view that implements the [`Composable`] trait.
 pub trait Composable: Sized {

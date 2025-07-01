@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/zintl-ui", "crates/zintl-render", "crates/zintl-render-math", "crates/zintl-run", "crates/zintl-wgpu", "crates/zintl-winit", "crates/zintl-ui-state", "crates/zintl-ui-macro", "crates/zintl-ui-view", "crates/zintl-ui-render", "crates/zintl-ui-app", "crates/zintl-widget", "crates/zintl"]
+members = ["crates/zintl-ui", "crates/zintl-render", "crates/zintl-render-math", "crates/zintl-run", "crates/zintl-wgpu", "crates/zintl-winit", "crates/zintl-state", "crates/zintl-ui-macro", "crates/zintl-widget", "crates/zintl"]
 
 [workspace.package]
 license = "BSD-3-Clause"
@@ -11,11 +11,8 @@ version = "0.0.1-alpha.2"
 [workspace.dependencies]
 zintl = { version = "0.0.1-alpha.1", path = "crates/zintl" }
 zintl-ui = { version = "0.0.1-alpha.1", path = "crates/zintl-ui" }
-zintl-ui-app = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-app" }
 zintl-ui-macro = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-macro" }
-zintl-ui-view = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-view" }
-zintl-ui-render = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-render" }
-zintl-ui-state = { version = "0.0.1-alpha.1", path = "crates/zintl-ui-state" }
+zintl-state = { version = "0.0.1-alpha.1", path = "crates/zintl-state" }
 zintl-render = { version = "0.0.1-alpha.1", path = "crates/zintl-render" }
 zintl-render-math = { version = "0.0.1-alpha.1", path = "crates/zintl-render-math" }
 zintl-run = { version = "0.0.1-alpha.1", path = "crates/zintl-run" }
