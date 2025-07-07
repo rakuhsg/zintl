@@ -69,7 +69,7 @@ impl RenderObject {
 pub struct RenderNode {
     pub object: RenderObject,
     pub inner: Option<Box<RenderNode>>,
-    pub child: Vec<RenderNode>,
+    pub children: Vec<RenderNode>,
 }
 
 impl RenderNode {
@@ -77,7 +77,7 @@ impl RenderNode {
         RenderNode {
             object,
             inner: None,
-            child: Vec::new(),
+            children: Vec::new(),
         }
     }
 
@@ -86,7 +86,7 @@ impl RenderNode {
     }
 
     pub fn push_child(&mut self, child: RenderNode) {
-        self.child.push(child);
+        self.children.push(child);
     }
 }
 

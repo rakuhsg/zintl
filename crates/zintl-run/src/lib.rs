@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use winit::{
     application::ApplicationHandler,
@@ -9,14 +9,14 @@ use winit::{
 
 use zintl_render::{tessellator, text};
 use zintl_render_math::{Alignment, LogicalPixelsPoint, LogicalPixelsRect, ScaleFactor, Viewport};
-use zintl_ui::{App, RenderContent};
+use zintl_ui::{App, RenderContent, RenderNode, RenderObject};
 use zintl_wgpu::WgpuApplication;
 
 #[allow(unused)]
 #[derive(Debug)]
 pub struct Application<'a> {
-    root: App,
-    wgpu: Option<WgpuApplication<'a>>,
+    app: App,
+    wgpu: Option<Arc<Mutex<WgpuApplication<'a>>>>,
     window: Option<Arc<Window>>,
     viewport: Viewport,
     render_contents: Vec<RenderContent>,
@@ -33,11 +33,11 @@ impl<'a> Application<'a> {
         let fam = include_bytes!("../assets/inter/Inter-Regular.ttf").to_vec();
         typecase.load_font("Inter".to_string(), fam);
         Self {
-            root: app,
+            app,
             wgpu: None,
             window: None,
             viewport: Viewport::new(800.into(), 600.into(), scale_factor),
-            render_contents: vec![RenderContent::Text("Zintl".to_string())],
+            render_contents: vec![],
             tessellator: tessellator::Tessellator::new(),
             system_font: text::FontProperties {
                 name: "Inter".to_string(),
@@ -49,32 +49,53 @@ impl<'a> Application<'a> {
     }
 }
 
+fn recursively_get_render_objects(node: &RenderNode, objects: &mut Vec<RenderObject>) {
+    objects.push(node.object.clone());
+    if let Some(node) = &node.inner {
+        recursively_get_render_objects(node.as_ref(), objects);
+    }
+    for child in &node.children {
+        recursively_get_render_objects(&child, objects);
+    }
+}
+
 impl<'a> Application<'a> {
+    pub fn get_render_objects(&mut self) -> Vec<RenderObject> {
+        let mut objects = vec![];
+        let node = self.app.root();
+        recursively_get_render_objects(&node, &mut objects);
+        objects
+    }
     pub fn render(&mut self, event_loop: &ActiveEventLoop) {
-        let wgpu = match &mut self.wgpu {
+        let mut wgpu = match self.wgpu.clone() {
             Some(wgpu) => wgpu,
             None => {
                 event_loop.set_control_flow(ControlFlow::Poll);
                 return;
             }
         };
+        let mut wgpu = wgpu.lock().unwrap();
         let mut tessellation_jobs = Vec::new();
+
+        let system_font = self.system_font.clone();
 
         let font = self
             .typecase
-            .get_font(self.system_font.clone())
-            .expect("Failed to get system font family");
+            .get_font(system_font)
+            .expect("Failed to get system font family")
+            .clone();
 
-        self.render_contents
-            .iter()
-            .for_each(|content| match content {
+        let objs = self.get_render_objects();
+
+        for obj in objs {
+            match obj.content {
                 RenderContent::Text(text) => {
                     let atlas_size = font.get_atlas_size();
                     let pixels = font.get_atlas_pixels();
                     let _ = wgpu.register_texture_with_id(0, pixels, atlas_size);
 
                     let galley = self.typesetter.compose(
-                        text,
+                        text.as_str(),
                         &font,
                         LogicalPixelsRect::new(
                             LogicalPixelsPoint::zero(),
@@ -87,11 +108,14 @@ impl<'a> Application<'a> {
                     tessellation_jobs.push(tessellator::TessellationJob::Galley(galley));
                 }
                 _ => {}
-            });
+            }
+        }
 
-        let meshes = self
-            .tessellator
-            .tessellate(&tessellation_jobs[0], &self.viewport);
+        let mut meshes = Vec::with_capacity(2048);
+        for job in tessellation_jobs {
+            let m = self.tessellator.tessellate(&job, &self.viewport);
+            meshes.extend(m);
+        }
 
         wgpu.draw(meshes);
 
@@ -117,7 +141,7 @@ impl<'a> ApplicationHandler for Application<'a> {
             window.clone(),
             self.viewport,
         )) {
-            Ok(wgpu) => Some(wgpu),
+            Ok(wgpu) => Some(Arc::new(wgpu.into())),
             Err(err) => {
                 eprintln!("Failed to create WGPU application: {}", err);
                 None
@@ -140,7 +164,7 @@ impl<'a> ApplicationHandler for Application<'a> {
                 self.viewport.device_height = (size.height as u32).into();
 
                 if let Some(wgpu) = &mut self.wgpu {
-                    wgpu.resize(self.viewport);
+                    wgpu.lock().unwrap().resize(self.viewport);
                 }
             }
             _ => (),

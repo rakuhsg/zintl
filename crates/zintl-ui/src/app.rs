@@ -13,7 +13,10 @@ impl App {
     pub fn new(mut view: impl View) -> Self {
         let mut storage = Storage::new();
         let root = view.render(&mut storage);
-        println!("{:?}", root);
         App { storage, root }
+    }
+
+    pub fn root(&self) -> &RenderNode {
+        &self.root
     }
 }

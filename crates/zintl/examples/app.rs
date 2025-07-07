@@ -17,7 +17,7 @@ impl Composable for HelloWorld {
         &self.context
     }
     fn compose(&mut self) -> impl View {
-        Stack::new().children(v![Label::new("HelloWorld".to_string())])
+        Stack::new().children(v![Label::new("Hellope".to_string()),])
     }
 }
 
