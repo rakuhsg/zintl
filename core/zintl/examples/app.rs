@@ -1,4 +1,6 @@
 use zintl::*;
+use zintl_desktop::*;
+use zintl_widget::*;
 
 struct HelloWorld {
     context: Context,

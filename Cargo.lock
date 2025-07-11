@@ -2418,11 +2418,22 @@ dependencies = [
 name = "zintl"
 version = "0.0.1-alpha.2"
 dependencies = [
- "zintl-render",
- "zintl-run",
+ "zintl-desktop",
  "zintl-ui",
  "zintl-ui-macro",
  "zintl-widget",
+]
+
+[[package]]
+name = "zintl-desktop"
+version = "0.0.1-alpha.2"
+dependencies = [
+ "pollster",
+ "winit",
+ "zintl-render",
+ "zintl-render-math",
+ "zintl-ui",
+ "zintl-wgpu",
 ]
 
 [[package]]
@@ -2443,18 +2454,6 @@ dependencies = [
  "bytemuck",
  "cgmath",
  "paste",
-]
-
-[[package]]
-name = "zintl-run"
-version = "0.0.1-alpha.2"
-dependencies = [
- "pollster",
- "winit",
- "zintl-render",
- "zintl-render-math",
- "zintl-ui",
- "zintl-wgpu",
 ]
 
 [[package]]
