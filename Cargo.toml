@@ -10,6 +10,7 @@ members = ["core/zintl",
     "desktop/zintl-desktop",
     "desktop/zintl-wgpu",
     "desktop/zintl-winit",
+    "web/zintl-wasm",
 ]
 
 [workspace.package]
@@ -29,5 +30,6 @@ zintl-render-math = { version = "0.0.1-alpha.1", path = "desktop/zintl-render-ma
 zintl-desktop = { version = "0.0.1-alpha.1", path = "desktop/zintl-desktop" }
 zintl-wgpu = { version = "0.0.1-alpha.1", path = "desktop/zintl-wgpu" }
 zintl-winit = { version = "0.0.1-alpha.1", path = "desktop/zintl-winit" }
+zintl-wasm = { version = "0.0.1-alpha.1", path = "web/zintl-wasm" }
 bytemuck = { version = "=1.23", features = ["derive"] }
 cgmath = "0.18"
