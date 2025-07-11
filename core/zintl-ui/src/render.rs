@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 #[derive(Debug, Clone)]
 pub enum Shape {
     Rectangle,
