@@ -7,3 +7,4 @@ authors.workspace = true
 version.workspace = true
 
 [dependencies]
+zintl.workspace = true
