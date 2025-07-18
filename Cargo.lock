@@ -2418,10 +2418,8 @@ dependencies = [
 name = "zintl"
 version = "0.0.1-alpha.2"
 dependencies = [
- "zintl-desktop",
  "zintl-ui",
  "zintl-ui-macro",
- "zintl-widget",
 ]
 
 [[package]]
@@ -2434,6 +2432,7 @@ dependencies = [
  "zintl-render-math",
  "zintl-ui",
  "zintl-wgpu",
+ "zintl-widget",
 ]
 
 [[package]]

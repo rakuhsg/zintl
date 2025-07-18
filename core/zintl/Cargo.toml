@@ -9,7 +9,3 @@ version.workspace = true
 [dependencies]
 zintl-ui.workspace = true
 zintl-ui-macro.workspace = true
-
-[dev-dependencies]
-zintl-desktop.workspace = true
-zintl-widget.workspace = true
