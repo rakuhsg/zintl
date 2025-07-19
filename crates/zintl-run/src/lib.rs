@@ -136,7 +136,6 @@ impl<'a> ApplicationHandler for Application<'a> {
                 .unwrap(),
         );
         self.window = Some(window.clone());
-        println!("Window scale factor: {}", window.scale_factor());
         self.wgpu = match pollster::block_on(WgpuApplication::from_window_handle(
             window.clone(),
             self.viewport,

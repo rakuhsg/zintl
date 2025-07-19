@@ -23,7 +23,6 @@ impl<T: Composable> View for T {
     fn render(&mut self, storage: &mut Storage) -> RenderNode {
         let mut node = RenderNode::new(RenderObject::empty());
         node.set_inner(self.compose().render(storage));
-        println!("{:?}", node);
         let child = self.get_context().render_children(storage);
         node.push_child(child);
         node
