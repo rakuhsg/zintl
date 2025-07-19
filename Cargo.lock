@@ -2418,10 +2418,20 @@ dependencies = [
 name = "zintl"
 version = "0.0.1-alpha.2"
 dependencies = [
- "zintl-render",
- "zintl-run",
  "zintl-ui",
  "zintl-ui-macro",
+]
+
+[[package]]
+name = "zintl-desktop"
+version = "0.0.1-alpha.2"
+dependencies = [
+ "pollster",
+ "winit",
+ "zintl-render",
+ "zintl-render-math",
+ "zintl-ui",
+ "zintl-wgpu",
  "zintl-widget",
 ]
 
@@ -2446,18 +2456,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "zintl-run"
-version = "0.0.1-alpha.2"
-dependencies = [
- "pollster",
- "winit",
- "zintl-render",
- "zintl-render-math",
- "zintl-ui",
- "zintl-wgpu",
-]
-
-[[package]]
 name = "zintl-state"
 version = "0.0.1-alpha.2"
 dependencies = [
@@ -2473,6 +2471,13 @@ name = "zintl-ui-macro"
 version = "0.0.1-alpha.2"
 dependencies = [
  "zintl-ui",
+]
+
+[[package]]
+name = "zintl-wasm"
+version = "0.0.1-alpha.2"
+dependencies = [
+ "zintl",
 ]
 
 [[package]]

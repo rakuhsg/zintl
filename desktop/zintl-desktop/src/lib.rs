@@ -67,7 +67,7 @@ impl<'a> Application<'a> {
         objects
     }
     pub fn render(&mut self, event_loop: &ActiveEventLoop) {
-        let mut wgpu = match self.wgpu.clone() {
+        let wgpu = match self.wgpu.clone() {
             Some(wgpu) => wgpu,
             None => {
                 event_loop.set_control_flow(ControlFlow::Poll);

@@ -1,5 +1,5 @@
 [package]
-name = "zintl-run"
+name = "zintl"
 edition = "2024"
 description.workspace = true
 license.workspace = true
@@ -8,8 +8,4 @@ version.workspace = true
 
 [dependencies]
 zintl-ui.workspace = true
-zintl-render.workspace = true
-zintl-render-math.workspace = true
-zintl-wgpu.workspace = true
-winit = "0.30"
-pollster = "0.3"
+zintl-ui-macro.workspace = true
