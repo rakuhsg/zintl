@@ -1,5 +1,5 @@
-use zintl_ui_render::RenderNode;
-use zintl_ui_view::{Context, Storage, View};
+use zintl_ui::RenderNode;
+use zintl_ui::{Context, Storage, View};
 
 pub struct State<T> {
     value: T,

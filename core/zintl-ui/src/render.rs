@@ -14,6 +14,21 @@ pub enum RenderContent {
 }
 
 #[derive(Debug, Clone, Default)]
+pub enum LayoutMode {
+    Fixed,
+    Flex,
+    #[default]
+    Block,
+    Inline,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct LayoutHint {
+    pub mode: LayoutMode,
+    pub metrics: Metrics,
+}
+
+#[derive(Debug, Clone, Default)]
 pub enum Metrics {
     #[default]
     /// Automatically determine the size based on content or context
@@ -45,21 +60,19 @@ impl Position {
 #[derive(Debug, Clone, Default)]
 pub struct RenderObject {
     pub content: RenderContent,
-    pub position: Position,
-    pub metrics: Metrics,
+    pub layout_hint: LayoutHint,
 }
 
 impl RenderObject {
-    pub fn new(content: RenderContent, position: Position, metrics: Metrics) -> Self {
+    pub fn new(content: RenderContent, layout_hint: LayoutHint) -> Self {
         RenderObject {
             content,
-            position,
-            metrics,
+            layout_hint,
         }
     }
 
     pub fn empty() -> Self {
-        RenderObject::new(RenderContent::Empty, Position::new(0., 0.), Metrics::Auto)
+        RenderObject::new(RenderContent::Empty, LayoutHint::default())
     }
 }
 

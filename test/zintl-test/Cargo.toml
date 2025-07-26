@@ -1,0 +1,12 @@
+[package]
+name = "zintl-test"
+edition = "2024"
+license.workspace = true
+description.workspace = true
+authors.workspace = true
+version.workspace = true
+
+[dependencies]
+zintl.workspace = true
+zintl-widget.workspace = true
+zintl-state.workspace = true

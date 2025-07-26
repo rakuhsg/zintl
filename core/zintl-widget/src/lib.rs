@@ -1,5 +1,5 @@
 use zintl_ui::{
-    Composable, Context, Metrics, Position, RenderContent, RenderNode, RenderObject, Storage, View,
+    Composable, Context, LayoutHint, RenderContent, RenderNode, RenderObject, Storage, View,
 };
 
 pub struct Base {
@@ -42,8 +42,7 @@ impl View for Label {
     fn render(&mut self, _: &mut Storage) -> RenderNode {
         RenderObject::new(
             RenderContent::Text(self.text.clone()),
-            Position::new(0., 0.),
-            Metrics::Auto,
+            LayoutHint::default(),
         )
         .into()
     }

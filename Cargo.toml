@@ -10,7 +10,7 @@ members = ["core/zintl",
     "desktop/zintl-desktop",
     "desktop/zintl-wgpu",
     "desktop/zintl-winit",
-    "web/zintl-wasm",
+    "web/zintl-wasm", "test/zintl-test",
 ]
 
 [workspace.package]
