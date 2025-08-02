@@ -7,6 +7,6 @@ group_imports = "StdExternalCrate"
 reorder_modules = true
 match_arm_blocks = false
 match_block_trailing_comma = false
-trailing_comma = "Always"
+trailing_comma = "Vertical"
 use_try_shorthand = true
 wrap_comments = true
