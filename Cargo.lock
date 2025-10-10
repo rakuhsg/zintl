@@ -2432,7 +2432,6 @@ dependencies = [
  "zintl-render-math",
  "zintl-ui",
  "zintl-wgpu",
- "zintl-widget",
 ]
 
 [[package]]
@@ -2501,13 +2500,6 @@ dependencies = [
  "wgpu",
  "zintl-render",
  "zintl-render-math",
-]
-
-[[package]]
-name = "zintl-widget"
-version = "0.0.1-alpha.2"
-dependencies = [
- "zintl-ui",
 ]
 
 [[package]]
