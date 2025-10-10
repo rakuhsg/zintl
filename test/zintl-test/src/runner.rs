@@ -1,33 +1,47 @@
 use zintl::*;
 
+use crate::views::TestRenderObject;
+
 pub enum AppError {}
 
-pub enum Event {
+#[derive(Copy, Clone, Debug)]
+pub enum TestEvent {
+    RedrawRequested,
     Click,
     PressAKey,
     PressBKey,
 }
 
+impl zintl::Event for TestEvent {
+    fn initial() -> Self {
+        TestEvent::RedrawRequested
+    }
+}
+
 pub struct Runner {
-    app: App,
+    app: App<TestEvent>,
 }
 
 impl Runner {
-    pub fn new(app: App) -> Self {
+    pub fn new(app: App<TestEvent>) -> Self {
         Runner { app }
     }
 
-    pub fn render(&mut self) -> String {
+    pub fn render(&mut self, event: TestEvent) -> String {
         let mut result = String::new();
 
         let mut objects = vec![];
-        let node = self.app.root();
-        recursively_get_render_objects(&node, &mut objects);
+        self.app.render(event);
+        let tree = &self.app.root;
+        let arena = &self.app.ro_arena;
+        recursively_get_render_objects(arena, tree, &mut objects);
+
+        println!("{} render objects found", objects.len());
 
         for obj in objects {
-            match obj.content {
-                RenderContent::Text(text) => {
-                    result = result + &text;
+            match obj {
+                TestRenderObject::Text(text) => {
+                    result += text;
                 }
                 _ => {}
             }
@@ -36,15 +50,21 @@ impl Runner {
         result
     }
 
-    pub fn fire_event(&mut self, _event: Event) {}
+    pub fn fire_event(&mut self, _event: TestEvent) {}
 }
 
-fn recursively_get_render_objects(node: &RenderNode, objects: &mut Vec<RenderObject>) {
-    objects.push(node.object.clone());
-    if let Some(node) = &node.inner {
-        recursively_get_render_objects(node.as_ref(), objects);
+fn recursively_get_render_objects<'a>(
+    arena: &'a ROArena,
+    node: &RenderNode,
+    objects: &mut Vec<&'a TestRenderObject>,
+) {
+    match arena.get_safe::<TestRenderObject>(node.object) {
+        Some(object) => {
+            objects.push(object);
+        }
+        _ => {}
     }
     for child in &node.children {
-        recursively_get_render_objects(&child, objects);
+        recursively_get_render_objects(&arena, &child, objects);
     }
 }

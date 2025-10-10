@@ -781,7 +781,8 @@ pub struct TexturePoint {
 }
 
 impl TexturePoint {
-    /// Safety: If the x and y values are not in the range [0.0, 1.0], this returns `None`.
+    /// Safety: If the x and y values are not in the range [0.0, 1.0], this
+    /// returns `None`.
     #[inline]
     pub fn new(x: f32, y: f32) -> Option<Self> {
         // TODO: Validate that x and y are in the range [0.0, 1.0].

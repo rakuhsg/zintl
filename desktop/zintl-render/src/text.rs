@@ -1,6 +1,9 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
+use ab_glyph::{Font as _, ScaleFont};
 use zintl_render_math::{
     Alignment, InLogicalScale, InPhysicalScale, LogicalPixels, LogicalPixelsRect, PhysicalPixels,
     PhysicalPixelsF, PhysicalPixelsFPoint, PhysicalPixelsFRect, PhysicalPixelsFSize,
@@ -8,7 +11,6 @@ use zintl_render_math::{
 };
 
 use crate::texture::Atlas;
-use ab_glyph::{Font as _, ScaleFont};
 
 /// A rectangle and texture coordinates for a glyph.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -300,8 +302,9 @@ impl Typesetter {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use zintl_render_math::{LogicalPixelsPoint, ScaleFactor};
+
+    use super::*;
 
     #[test]
     fn galley_logical_rect() {

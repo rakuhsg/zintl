@@ -1,15 +1,20 @@
-use crate::view::Context;
-use crate::view::Storage;
-
-use crate::render::{RenderNode, RenderObject};
+use crate::{
+    event::Event,
+    render::{ROArena, RenderNode},
+    view::{Context, Storage},
+};
 
 // A renderable component that has context.
-pub trait View: Sized {
-    fn get_context(&self) -> &Context;
+pub trait View<E>
+where
+    Self: Sized,
+    E: Event,
+{
+    fn get_context(&self) -> &Context<E>;
 
-    fn render(&mut self, _: &mut Storage) -> RenderNode {
-        RenderNode::new(RenderObject::empty())
-    }
+    fn render(&mut self, arena: &mut ROArena, storage: &mut Storage, event: E) -> RenderNode;
+
+    fn handle(&mut self, e: E) {}
 
     // TODO
     #[allow(unused)]
