@@ -1,7 +1,6 @@
-use crate::mesh::Mesh;
-use crate::text::Galley;
-
 use zintl_render_math::{PhysicalPixelsPoint, PhysicalPixelsRect, Viewport};
+
+use crate::{mesh::Mesh, text::Galley};
 
 pub enum TessellationJob {
     Galley(Galley),
