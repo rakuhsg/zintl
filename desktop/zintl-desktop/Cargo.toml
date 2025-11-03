@@ -13,6 +13,3 @@ zintl-render-math.workspace = true
 zintl-wgpu.workspace = true
 winit = "0.30"
 pollster = "0.3"
-
-[dev-dependencies]
-zintl-widget.workspace = true

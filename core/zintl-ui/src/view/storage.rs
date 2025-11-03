@@ -1,6 +1,8 @@
-use std::any::Any;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    any::Any,
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 /// Persistent key-value storage for [`View`].
 #[derive(Clone, Debug)]
@@ -16,6 +18,10 @@ impl Storage {
     }
 
     pub fn insert<T: 'static>(&mut self, key: String, data: T) {
-        self.data.lock().unwrap().insert(key, Arc::new(data)).unwrap();
+        self.data
+            .lock()
+            .unwrap()
+            .insert(key, Arc::new(data))
+            .unwrap();
     }
 }

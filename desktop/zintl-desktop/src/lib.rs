@@ -6,7 +6,6 @@ use winit::{
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     window::{Window, WindowId},
 };
-
 use zintl_render::{tessellator, text};
 use zintl_render_math::{Alignment, LogicalPixelsPoint, LogicalPixelsRect, ScaleFactor, Viewport};
 use zintl_ui::{App, RenderContent, RenderNode, RenderObject};
@@ -66,6 +65,7 @@ impl<'a> Application<'a> {
         recursively_get_render_objects(&node, &mut objects);
         objects
     }
+
     pub fn render(&mut self, event_loop: &ActiveEventLoop) {
         let wgpu = match self.wgpu.clone() {
             Some(wgpu) => wgpu,

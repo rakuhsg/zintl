@@ -1,29 +1,36 @@
-use crate::view::Storage;
-use crate::view::View;
-use crate::view::{Context, Generator};
+use crate::{
+    event::Event,
+    render::{ROArena, RenderNode},
+    view::{Context, Generator, Storage, View},
+};
 
-use crate::render::{RenderNode, RenderObject};
+/// A marker trait for views that have children.
+pub trait Composable {}
 
 /// A view that implements the [`Composable`] trait.
-pub trait Composable: Sized {
-    fn context(&self) -> &Context;
-    fn compose(&mut self) -> impl View;
+pub trait ComposableView<E: Event>: Sized + Composable + View<E> {
+    fn context(&self) -> &Context<E>;
+    fn compose(&mut self) -> impl View<E>;
 
-    fn children(self, children: Vec<Generator>) -> Self {
+    fn children(self, children: Vec<Generator<E>>) -> Self {
         self.get_context().set_children(children);
         self
     }
 }
 
-impl<T: Composable> View for T {
-    fn get_context(&self) -> &Context {
+impl<T, E> View<E> for T
+where
+    E: Event,
+    T: ComposableView<E> + Composable,
+{
+    fn get_context(&self) -> &Context<E> {
         self.context()
     }
 
-    fn render(&mut self, storage: &mut Storage) -> RenderNode {
-        let mut node = RenderNode::new(RenderObject::empty());
-        node.set_inner(self.compose().render(storage));
-        let child = self.get_context().render_children(storage);
+    fn render(&mut self, arena: &mut ROArena, storage: &mut Storage, event: E) -> RenderNode {
+        let mut node = RenderNode::empty();
+        node.set_inner(self.compose().render(arena, storage, event.clone()));
+        let child = self.get_context().render_children(arena, storage, event);
         node.push_child(child);
         node
     }

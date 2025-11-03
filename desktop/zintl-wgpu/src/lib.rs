@@ -3,9 +3,8 @@ use std::{borrow::Cow, collections::HashMap, fmt::Display};
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use wgpu::util::DeviceExt;
 use zintl_render::mesh::Mesh;
-use zintl_render_math::Mat4;
 use zintl_render_math::{
-    PhysicalPixelsFPoint, PhysicalPixelsPoint, PhysicalPixelsSize, TexturePoint, Viewport,
+    Mat4, PhysicalPixelsFPoint, PhysicalPixelsPoint, PhysicalPixelsSize, TexturePoint, Viewport,
 };
 
 pub trait WindowHandle: HasWindowHandle + HasDisplayHandle + Sync + Send {}

@@ -8,5 +8,4 @@ version.workspace = true
 
 [dependencies]
 zintl.workspace = true
-zintl-widget.workspace = true
 zintl-state.workspace = true
