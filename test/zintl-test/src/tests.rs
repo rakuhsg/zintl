@@ -27,19 +27,29 @@ mod test {
             "Hi".to_string(),
             |value| {
                 let mut v = value.clone();
+                println!("rerender");
                 v![
                     TestStack::new().children(v![TestButton::new(value.value().to_string())
                         .on_click(move || {
                             println!("Click event triggered.");
                             v.set("Clicked".to_string().to_owned());
-                        }),])
+                        }),]),
+                    StatefulView::new(marked!(), "Hoi".to_string(), |value_child| {
+                        let mut v = value_child.clone();
+                        v![
+                            TestButton::new(value_child.value().to_string()).on_click(move || {
+                                println!("Click event triggered.");
+                                v.set("Clicked".to_string().to_owned());
+                            })
+                        ]
+                    })
                 ]
             }
         )]));
         let mut runner = Runner::new(app);
-        assert_eq!(runner.render(TestEvent::RedrawRequested), "Hi");
-        assert_eq!(runner.render(TestEvent::Click), "Hi");
-        assert_eq!(runner.render(TestEvent::RedrawRequested), "Clicked");
-        assert_eq!(runner.render(TestEvent::RedrawRequested), "Clicked");
+        assert_eq!(runner.render(TestEvent::RedrawRequested), "HiHoi");
+        assert_eq!(runner.render(TestEvent::Click), "HiHoi");
+        assert_eq!(runner.render(TestEvent::RedrawRequested), "ClickedClicked");
+        assert_eq!(runner.render(TestEvent::RedrawRequested), "ClickedClicked");
     }
 }

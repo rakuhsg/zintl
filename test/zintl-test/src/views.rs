@@ -95,6 +95,7 @@ pub struct TestButton {
 
 impl TestButton {
     pub fn new(label: String) -> Self {
+        println!("TestButton::new()");
         TestButton {
             label,
             context: zintl::Context::new(),
