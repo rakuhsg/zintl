@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod test {
+
     use zintl::*;
     use zintl_state::*;
 
@@ -24,7 +25,7 @@ mod test {
     fn stateful() {
         let app = App::new(TestStack::new().children(v![StatefulView::new(
             marked!(),
-            "Hi".to_string(),
+            || String::from("Hi"),
             |value| {
                 let mut v = value.clone();
                 println!("rerender");
@@ -34,15 +35,19 @@ mod test {
                             println!("Click event triggered.");
                             v.set("Clicked".to_string().to_owned());
                         }),]),
-                    StatefulView::new(marked!(), "Hoi".to_string(), |value_child| {
-                        let mut v = value_child.clone();
-                        v![
-                            TestButton::new(value_child.value().to_string()).on_click(move || {
-                                println!("Click event triggered.");
-                                v.set("Clicked".to_string().to_owned());
-                            })
-                        ]
-                    })
+                    StatefulView::new(
+                        marked!(),
+                        || String::from("Hoi"),
+                        |value_child| {
+                            let mut v = value_child.clone();
+                            v![TestButton::new(value_child.value().to_string()).on_click(
+                                move || {
+                                    println!("Click event triggered.");
+                                    v.set("Clicked".to_string().to_owned());
+                                }
+                            )]
+                        }
+                    )
                 ]
             }
         )]));
