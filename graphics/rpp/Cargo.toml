@@ -1,0 +1,14 @@
+[package]
+name = "rpp"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+wgpu = ["dep:wgpu"]
+rwh = ["dep:raw-window-handle"]
+default = ["wgpu", "rwh"]
+
+[dependencies]
+wgpu = { optional = true, version = "27" }
+raw-window-handle = { optional = true, version = "0.6.2" }
+bytemuck = { version = "1.23", features = ["derive"] }

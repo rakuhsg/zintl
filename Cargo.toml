@@ -4,11 +4,7 @@ members = ["core/zintl",
     "core/zintl-state",
     "core/zintl-ui",
     "core/zintl-ui-macro",
-    "desktop/zintl-render",
-    "desktop/zintl-render-math",
-    "desktop/zintl-desktop",
-    "desktop/zintl-wgpu",
-    "desktop/zintl-winit",
+    "graphics/rpp",
     "web/zintl-wasm", "test/zintl-test",
 ]
 
@@ -23,11 +19,4 @@ zintl = { version = "0.0.1-alpha.1", path = "core/zintl" }
 zintl-ui = { version = "0.0.1-alpha.1", path = "core/zintl-ui" }
 zintl-ui-macro = { version = "0.0.1-alpha.1", path = "core/zintl-ui-macro" }
 zintl-state = { version = "0.0.1-alpha.1", path = "core/zintl-state" }
-zintl-render = { version = "0.0.1-alpha.1", path = "desktop/zintl-render" }
-zintl-render-math = { version = "0.0.1-alpha.1", path = "desktop/zintl-render-math" }
-zintl-desktop = { version = "0.0.1-alpha.1", path = "desktop/zintl-desktop" }
-zintl-wgpu = { version = "0.0.1-alpha.1", path = "desktop/zintl-wgpu" }
-zintl-winit = { version = "0.0.1-alpha.1", path = "desktop/zintl-winit" }
 zintl-wasm = { version = "0.0.1-alpha.1", path = "web/zintl-wasm" }
-bytemuck = { version = "=1.23", features = ["derive"] }
-cgmath = "0.18"
