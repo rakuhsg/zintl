@@ -87,13 +87,13 @@ impl zintl::ComposableView<TestEvent> for TestStack {
     }
 }
 
-pub struct TestButton {
+pub struct TestButton<'a> {
     context: zintl::Context<TestEvent>,
     label: String,
-    on_click_fn: Option<Box<dyn FnMut() -> ()>>,
+    on_click_fn: Option<Box<dyn FnMut() -> () + 'a>>,
 }
 
-impl TestButton {
+impl<'a> TestButton<'a> {
     pub fn new(label: String) -> Self {
         println!("TestButton::new()");
         TestButton {
@@ -103,13 +103,13 @@ impl TestButton {
         }
     }
 
-    pub fn on_click<T: FnMut() -> () + 'static>(mut self, f: T) -> Self {
+    pub fn on_click<T: FnMut() -> () + 'a>(mut self, f: T) -> Self {
         self.on_click_fn = Some(Box::new(f));
         self
     }
 }
 
-impl zintl::View<TestEvent> for TestButton {
+impl<'a> zintl::View<TestEvent> for TestButton<'a> {
     fn get_context(&self) -> &zintl::Context<TestEvent> {
         &self.context
     }

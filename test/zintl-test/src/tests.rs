@@ -27,25 +27,20 @@ mod test {
             marked!(),
             || String::from("Hi"),
             |value| {
-                let mut v = value.clone();
                 println!("rerender");
                 v![
-                    TestStack::new().children(v![TestButton::new(value.value().to_string())
-                        .on_click(move || {
-                            println!("Click event triggered.");
-                            v.set("Clicked".to_string().to_owned());
-                        }),]),
+                    TestStack::new().children(v![TestButton::new(value.clone()).on_click(|| {
+                        println!("Click event triggered.");
+                        *value = String::from("Clicked");
+                    }),]),
                     StatefulView::new(
                         marked!(),
                         || String::from("Hoi"),
                         |value_child| {
-                            let mut v = value_child.clone();
-                            v![TestButton::new(value_child.value().to_string()).on_click(
-                                move || {
-                                    println!("Click event triggered.");
-                                    v.set("Clicked".to_string().to_owned());
-                                }
-                            )]
+                            v![TestButton::new(value_child.clone()).on_click(move || {
+                                println!("Click event triggered in c.");
+                                *value_child = "Clicked".to_string()
+                            })]
                         }
                     )
                 ]

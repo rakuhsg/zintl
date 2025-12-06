@@ -12,8 +12,8 @@ pub trait ComposableView<E: Event>: Sized + Composable + View<E> {
     fn context(&self) -> &Context<E>;
     fn compose(&mut self) -> impl View<E>;
 
-    fn children(self, children: Vec<Generator<E>>) -> Self {
-        self.get_context().set_children(children);
+    fn children<F: FnOnce() -> Vec<Generator<E>>>(self, f: F) -> Self {
+        self.get_context().set_children(f());
         self
     }
 }
