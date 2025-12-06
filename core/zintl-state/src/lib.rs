@@ -83,11 +83,27 @@ where
             None => None,
         });
         match children {
+            // Render child elm
             Some(children) =>
                 <StatefulView<E, T, F, G> as View<E>>::get_context(self).set_children(children()),
             None => {
                 // No entry found so we need to insert default value.
                 storage.insert(self.key.clone(), self.initial_state.clone());
+                // Try one more time.
+                let children = storage.modify(self.key.clone(), |v: Option<&mut T>| match v {
+                    Some(v) => {
+                        // Erasing lifetime
+                        //SAFETY: generator closure drops before this value will drops.
+                        let v: &'static mut T = unsafe { std::mem::transmute(v) };
+                        Some((self.generator)(v))
+                    }
+                    None => None,
+                });
+                match children {
+                    Some(children) => <StatefulView<E, T, F, G> as View<E>>::get_context(self)
+                        .set_children(children()),
+                    None => {}
+                }
             }
         }
         let mut node = RenderNode::empty();
