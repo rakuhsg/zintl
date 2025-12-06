@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod test {
+
     use zintl::*;
     use zintl_state::*;
 
@@ -24,22 +25,31 @@ mod test {
     fn stateful() {
         let app = App::new(TestStack::new().children(v![StatefulView::new(
             marked!(),
-            "Hi".to_string(),
+            || String::from("Hi"),
             |value| {
-                let mut v = value.clone();
+                println!("rerender");
                 v![
-                    TestStack::new().children(v![TestButton::new(value.value().to_string())
-                        .on_click(move || {
-                            println!("Click event triggered.");
-                            v.set("Clicked".to_string().to_owned());
-                        }),])
+                    TestStack::new().children(v![TestButton::new(value.clone()).on_click(|| {
+                        println!("Click event triggered.");
+                        *value = String::from("Clicked");
+                    }),]),
+                    StatefulView::new(
+                        marked!(),
+                        || String::from("Hoi"),
+                        |value_child| {
+                            v![TestButton::new(value_child.clone()).on_click(move || {
+                                println!("Click event triggered in c.");
+                                *value_child = "Clicked".to_string()
+                            })]
+                        }
+                    )
                 ]
             }
         )]));
         let mut runner = Runner::new(app);
-        assert_eq!(runner.render(TestEvent::RedrawRequested), "Hi");
-        assert_eq!(runner.render(TestEvent::Click), "Hi");
-        assert_eq!(runner.render(TestEvent::RedrawRequested), "Clicked");
-        assert_eq!(runner.render(TestEvent::RedrawRequested), "Clicked");
+        assert_eq!(runner.render(TestEvent::RedrawRequested), "HiHoi");
+        assert_eq!(runner.render(TestEvent::Click), "HiHoi");
+        assert_eq!(runner.render(TestEvent::RedrawRequested), "ClickedClicked");
+        assert_eq!(runner.render(TestEvent::RedrawRequested), "ClickedClicked");
     }
 }

@@ -13,7 +13,7 @@ members = ["core/zintl",
 ]
 
 [workspace.package]
-license = "BSD-3-Clause"
+license = "Apache-2.0"
 description = "Powerful yet simple GUI toolkit for Rust."
 authors = ["Hasegawa, Raku <raku@exhibition.jp>"]
 version = "0.0.1-alpha.2"
