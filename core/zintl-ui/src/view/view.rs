@@ -8,14 +8,15 @@ use crate::{
 pub trait View<E>
 where
     Self: Sized,
-    E: Event,
 {
     fn get_context(&self) -> &Context<E>;
 
     fn render(&mut self, arena: &mut ROArena, storage: &mut Storage, event: E) -> RenderNode;
 
-    fn handle(&mut self, e: E) {}
+    fn handle(&mut self, _e: E) {}
+}
 
+pub trait StyleSelector<E: Event>: View<E> {
     // TODO
     #[allow(unused)]
     fn padding(self, top: f32, bottom: f32, left: f32, right: f32) -> Self {
@@ -23,3 +24,5 @@ where
         self
     }
 }
+
+impl<E: Event, T: View<E>> StyleSelector<E> for T {}

@@ -6,12 +6,12 @@ use crate::{
     view::Storage,
 };
 
-pub type Generator<E: Event> = Box<dyn FnMut(&mut ROArena, &mut Storage, E) -> RenderNode>;
+pub type Generator<E> = Box<dyn FnMut(&mut ROArena, &mut Storage, E) -> RenderNode>;
 
 /// The context consists of a set of style properties and layouts to render
 /// views.
 #[derive(Default)]
-pub struct Context<E: Event> {
+pub struct Context<E> {
     children: RefCell<Vec<Generator<E>>>,
 }
 

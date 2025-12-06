@@ -8,11 +8,11 @@ impl<T> StateValue for T where T: 'static + Clone {}
 pub trait StatefulGenerator<E: Event, T: StateValue, F>
 where
     F: FnOnce() -> Vec<Generator<E>>,
-    Self: FnMut(&mut T) -> F,
+    Self: FnMut(&'static mut T) -> F,
 {
 }
 
-impl<E: Event, T: StateValue, F: FnOnce() -> Vec<Generator<E>>, G: FnMut(&mut T) -> F>
+impl<E: Event, T: StateValue, F: FnOnce() -> Vec<Generator<E>>, G: FnMut(&'static mut T) -> F>
     StatefulGenerator<E, T, F> for G
 {
 }
@@ -73,8 +73,13 @@ where
     }
 
     fn render(&mut self, arena: &mut ROArena, storage: &mut Storage, event: E) -> RenderNode {
-        let children = storage.modify(self.key.clone(), |v| match v {
-            Some(v) => Some((self.generator)(v)),
+        let children = storage.modify(self.key.clone(), |v: Option<&mut T>| match v {
+            Some(v) => {
+                // Erasing lifetime
+                //SAFETY: generator closure drops before this value will drops.
+                let v: &'static mut T = unsafe { std::mem::transmute(v) };
+                Some((self.generator)(v))
+            }
             None => None,
         });
         match children {
