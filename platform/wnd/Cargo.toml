@@ -1,0 +1,25 @@
+[package]
+name = "wnd"
+version = { workspace = true }
+edition = "2021"
+description = "Create and handle native windows."
+license = { workspace = true }
+include = [
+  "/src",
+  "/examples",
+]
+
+[dependencies]
+raw-window-handle = { workspace = true }
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { workspace = true, features = [
+  "Win32_Graphics_Gdi",
+  "Win32_System_LibraryLoader",
+  "Win32_UI_HiDpi",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_Graphics_Dwm",
+  "Win32_UI_Controls",
+] }
+
+[[example]]
+name = "window"
