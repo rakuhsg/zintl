@@ -6,4 +6,7 @@ pub mod win32;
 pub use win32::implements::NativeWindow as WindowHandler;
 
 #[cfg(target_os = "windows")]
-pub(crate) use win32::implements::EventRunner;
+pub(crate) use win32::implements::EventDispatcher;
+
+#[cfg(target_os = "windows")]
+pub(crate) use win32::implements::{PlatformImpl, PlatformImplError};

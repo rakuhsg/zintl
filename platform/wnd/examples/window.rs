@@ -1,37 +1,30 @@
-use wnd::event::{Context, Event, EventDispatcher, EventHandler, ReturnCode};
-use wnd::window::{Window, WindowInitialInfo};
+use wnd::prelude::*;
+
 fn main() {
-    let dispatcher = EventDispatcher::new();
-
-    #[derive(Default)]
-    struct App {
-        window: Option<Window>,
-    }
-
-    impl EventHandler for App {
-        fn init(&mut self, context: &Context) {
-            let info = WindowInitialInfo {
-                pos_x: 0,
-                pos_y: 0,
-                width: 640,
-                height: 480,
-                title: String::from("window"),
-            };
-            let window = context
-                .create_window(info)
-                .expect("unable to create window");
-            window.apply_system_appearance();
-            self.window = Some(window);
-        }
-        fn window_event(&mut self, context: &Context, window: &Window, event: Event) {}
-    }
-
-    dispatcher.with_handler(App::default());
+    let mut platform = Platform::new().unwrap();
+    let mut window: Option<Window> = None;
 
     loop {
-        match dispatcher.dispatch() {
-            Some(code) => match code {
-                ReturnCode::Exit => break,
+        match platform.dispatch() {
+            Event::Init => {
+                let info = WindowInitialInfo {
+                    pos_x: 0,
+                    pos_y: 0,
+                    width: 640,
+                    height: 480,
+                    title: String::from("window"),
+                };
+                let win = platform
+                    .create_window(info)
+                    .expect("unable to create window");
+                win.apply_system_appearance();
+                window = Some(window.clone());
+            }
+            Event::Exit(code) => match code {
+                ReturnCode::Exit => {
+                    window.terminate_or(None);
+                    break;
+                }
             },
             _ => {}
         }

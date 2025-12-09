@@ -1,12 +1,28 @@
-use std::{borrow::BorrowMut, cell::Cell, default, mem, mem::transmute};
-use std::mem::size_of;
-use std::sync::{Arc, RwLock};
-use windows::core::PCWSTR;
-use windows::Win32::{
-    Foundation::{HWND, LPARAM, LRESULT, WPARAM, COLORREF},
-    Graphics::{Gdi::{UpdateWindow, CreateSolidBrush, InvalidateRect}, Dwm::{
-        DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DWMSBT_MAINWINDOW, DWMWA_SYSTEMBACKDROP_TYPE, DWM_SYSTEMBACKDROP_TYPE
+use crate::window::WindowInitialInfo;
+use crate::{
+    driver::{
+        error::{CreateWindowError, WindowHandlerError, WindowHandlerResult},
+        win32::utils::string::StringExt,
     },
+    event::{Event, ExitCode, RunMode},
+    platform::{PlatformError, PlatformResult},
+};
+use std::mem::size_of;
+use std::sync::mpsc;
+use std::sync::{Arc, RwLock};
+use std::{borrow::BorrowMut, cell::Cell, default, mem, mem::transmute};
+use windows::core::PCWSTR;
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetWindowLongPtrW, RegisterClassExW, SetWindowLongPtrW, GWLP_USERDATA, WNDCLASSEXW,
+};
+use windows::Win32::{
+    Foundation::{COLORREF, HMODULE, HWND, LPARAM, LRESULT, WPARAM},
+    Graphics::{
+        Dwm::{
+            DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DWMSBT_MAINWINDOW,
+            DWMWA_SYSTEMBACKDROP_TYPE, DWM_SYSTEMBACKDROP_TYPE,
+        },
+        Gdi::{CreateSolidBrush, InvalidateRect, UpdateWindow},
     },
     System::LibraryLoader::GetModuleHandleW,
     UI::{
@@ -16,47 +32,37 @@ use windows::Win32::{
             DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
         },
         WindowsAndMessaging::{
-            CreateWindowExW, DefWindowProcW, DispatchMessageW, LoadCursorW,
-            PeekMessageW, PostQuitMessage, RegisterClassW, SetWindowPos, ShowWindow,
-            TranslateMessage, CS_HREDRAW, CS_VREDRAW, IDI_APPLICATION, MSG, PM_REMOVE,
-            SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOZORDER, SW_SHOW, WINDOW_EX_STYLE, WM_DESTROY,
-            WM_QUIT, WNDCLASSW, WS_OVERLAPPEDWINDOW, CREATESTRUCTW, SWP_NOREDRAW, WM_PAINT, WM_CREATE
+            CreateWindowExW, DefWindowProcW, DispatchMessageW, LoadCursorW, PeekMessageW,
+            PostQuitMessage, RegisterClassW, SetWindowPos, ShowWindow, TranslateMessage,
+            CREATESTRUCTW, CS_HREDRAW, CS_VREDRAW, IDI_APPLICATION, MSG, PM_REMOVE, SWP_NOACTIVATE,
+            SWP_NOMOVE, SWP_NOREDRAW, SWP_NOZORDER, SW_SHOW, WINDOW_EX_STYLE, WM_CREATE,
+            WM_DESTROY, WM_PAINT, WM_QUIT, WNDCLASSW, WS_OVERLAPPEDWINDOW,
         },
     },
 };
-use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, RegisterClassExW, SetWindowLongPtrW, GWLP_USERDATA, WNDCLASSEXW};
-use crate::{
-    driver::{
-        error::{CreateWindowError, WindowHandlerError, WindowHandlerResult},
-        win32::utils::string::StringExt,
-    },
-    event::{Event, ReturnCode},
-};
-use crate::window::WindowInitialInfo;
 
 pub struct NativeWindow {
     hwnd: HWND,
 }
 
-struct WindowState {
+struct WindowState {}
 
-}
-
+#[derive(Clone)]
 struct WindowUserData {
-    state: RwLock<WindowState>,
-    /// EventRunner is owned by EventLoop
-    runner: Arc<EventRunner>,
+    sender: Sender<Event>,
+    state: WindowState,
 }
 
 impl WindowUserData {
-    pub fn new(runner: Arc<EventRunner>) -> Self {
+    pub fn new(sender: mpsc::Sender<Event>) -> Self {
         Self {
-            state: RwLock::new(WindowState {}),
-            runner,
+            sender,
+            state: WindowState {},
         }
     }
 }
 
+// TODO: safety note
 unsafe extern "system" fn wndproc(
     hwnd: HWND,
     u_msg: u32,
@@ -69,12 +75,14 @@ unsafe extern "system" fn wndproc(
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, ud as _);
     }
 
-    let ud = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const WindowUserData;
+    // SAFETY: ud will not drop at end of function.
+    let ud = GetWindowLongPtrW(hwnd, GWLP_USERDATA) as *const RwLock<WindowUserData>;
+    // SAFETY: Do nothing if user data is null
     if ud.is_null() {
         return DefWindowProcW(hwnd, u_msg, w_param, l_param);
     }
 
-    let ud = &*(ud);
+    let _ud = &*(ud);
 
     match u_msg {
         WM_PAINT => {
@@ -90,8 +98,13 @@ unsafe extern "system" fn wndproc(
 }
 
 impl NativeWindow {
-    pub fn new(runner: Arc<EventRunner>, info: WindowInitialInfo) -> WindowHandlerResult<Self> {
-        let hwnd = match Self::create_window(runner, &info) {
+    pub fn new(
+        info: WindowInitialInfo,
+        hinstance: HMODULE,
+        classname: PCWSTR,
+        userdata: Arc<RwLock<WindowUserData>>,
+    ) -> WindowHandlerResult<Self> {
+        let hwnd = match Self::create_window(&info, hinstance, classname, userdata) {
             Ok(hwnd) => hwnd,
             Err(err) => return Err(WindowHandlerError::CreateWindowError(err)),
         };
@@ -99,35 +112,12 @@ impl NativeWindow {
         Ok(Self { hwnd })
     }
 
-    fn create_window(runner: Arc<EventRunner>, info: &WindowInitialInfo) -> Result<HWND, CreateWindowError> {
-        let classname = String::from("ryswn").to_pcwstr();
-        let hinstance = match unsafe { GetModuleHandleW(None) } {
-            Ok(h) => h,
-            Err(e) => {
-                panic!("fatal: failed to get hinstance: {}", e.message());
-            }
-        };
-
-        let mut class = unsafe {
-            WNDCLASSEXW {
-                style: CS_HREDRAW | CS_VREDRAW,
-                lpfnWndProc: Some(wndproc),
-                cbClsExtra: 0,
-                cbWndExtra: 0,
-                cbSize: mem::size_of::<WNDCLASSEXW>() as _,
-                hInstance: hinstance.into(),
-                lpszClassName: classname,
-                lpszMenuName: PCWSTR::null(),
-                hCursor: LoadCursorW(None, IDI_APPLICATION).unwrap(),
-                hbrBackground: CreateSolidBrush(COLORREF(0x000000)),
-                ..Default::default()
-            }
-        };
-
-        assert_ne!(unsafe { RegisterClassExW(&class) }, 0, "RegisterClassExW returns 0");
-
-        let userdata = Arc::new(WindowUserData::new(runner.clone()));
-
+    fn create_window(
+        info: &WindowInitialInfo,
+        hinstance: HMODULE,
+        classname: PCWSTR,
+        userdata: Arc<RwLock<WindowUserData>>,
+    ) -> Result<HWND, CreateWindowError> {
         let hwnd = match unsafe {
             CreateWindowExW(
                 WINDOW_EX_STYLE(0),
@@ -147,8 +137,8 @@ impl NativeWindow {
             Ok(hwnd) => hwnd,
             Err(e) => {
                 println!("fatal: {}", e.message());
-                return Err(CreateWindowError::FailedToCreateWindow)
-            },
+                return Err(CreateWindowError::FailedToCreateWindow);
+            }
         };
 
         let dpi = unsafe { GetDpiForWindow(hwnd) as f32 };
@@ -179,6 +169,7 @@ impl NativeWindow {
     pub fn get_title(&self) {}
 
     pub fn apply_system_appearance(&self) {
+        // Applying Mica window backdrop.
         let margin = MARGINS {
             cxLeftWidth: -1,
             cxRightWidth: -1,
@@ -189,9 +180,18 @@ impl NativeWindow {
         let _ = unsafe { DwmExtendFrameIntoClientArea(self.hwnd, &margin) };
 
         let mut backdrop = DWMSBT_MAINWINDOW;
-        let _ = unsafe { DwmSetWindowAttribute(self.hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &mut backdrop as *mut _ as _, size_of::<DWM_SYSTEMBACKDROP_TYPE>() as _) };
+        let _ = unsafe {
+            DwmSetWindowAttribute(
+                self.hwnd,
+                DWMWA_SYSTEMBACKDROP_TYPE,
+                &mut backdrop as *mut _ as _,
+                size_of::<DWM_SYSTEMBACKDROP_TYPE>() as _,
+            )
+        };
     }
 
+    // TODO: Add feature flag
+    // TODO: Move API to impl Platform
     pub fn rwh(
         &self,
     ) -> Result<raw_window_handle::RawWindowHandle, raw_window_handle::HandleError> {
@@ -206,32 +206,112 @@ impl NativeWindow {
     }
 }
 
-pub(crate) struct EventRunner {
-    handler: Cell<Option<Box<dyn FnMut(Event) -> ()>>>,
+pub enum PlatformImplError {
+    APICallingFailed(String),
 }
 
-impl EventRunner {
-    pub fn new() -> Self {
-        Self::enable_hidpi_support();
+pub type PlatformImplResult<T> = Result<T, PlatformImplError>;
 
-        Self {
-            handler: Cell::new(None),
-        }
+pub(crate) struct PlatformImpl {
+    ud: Arc<RwLock<WindowUserData>>,
+    hinstance: HMODULE,
+    classname: PCWSTR,
+}
+
+impl PlatformImpl {
+    pub fn new(sender: mpsc::Sender<Event>) -> PlatformImplResult<Self> {
+        Self::enable_hidpi_support();
+        let hinstance = Self::get_instance()?;
+        let classname = Self::initialize_window_class(hinstance)?;
+        let userdata = WindowUserData::new(sender);
+        Ok(PlatformImpl {
+            ud: Arc::new(RwLock::new(userdata)),
+            hinstance,
+            classname,
+        })
     }
 
     fn enable_hidpi_support() {
-        let _ = unsafe { SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
+        // SAFETY: It is not critical if it be failed.
+        let _ =
+            unsafe { SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
     }
 
-    pub fn register_handler<F: FnMut(Event) -> ()>(&self, handler: F) {
-        // Erase lifetime
-        let handler =
-            unsafe { transmute::<Box<dyn FnMut(Event)>, Box<dyn FnMut(Event)>>(Box::new(handler)) };
-        // Resetting an event handler without before clearing is prohibited.
-        assert!(self.handler.replace(Some(handler)).is_none());
+    fn get_hinstance() -> PlatformImplResult<HMODULE> {
+        // SAFETY: Not safe for now.
+        match unsafe { GetModuleHandleW(None) } {
+            Ok(h) => Ok(h),
+            Err(e) => Err(
+                PlatformImplError::APICallingFailed(format!(
+                    "failed to get hinstance: {}",
+                    e.message()
+                )),
+            ),
+        }
     }
 
-    pub fn dispatch_events(&self) -> Option<ReturnCode> {
+    fn initialize_window_class(hinstance: HMODULE) {
+        let classname = String::from("appwindow").to_pcwstr();
+
+        // SAFETY: IDI_APPLICATION is supported on almost every Windows version.
+        // CreateSolidBrush(COLORREF(0x000000)) is safe absolutely.
+        let mut class = unsafe {
+            WNDCLASSEXW {
+                style: CS_HREDRAW | CS_VREDRAW,
+                lpfnWndProc: Some(wndproc),
+                cbClsExtra: 0,
+                cbWndExtra: 0,
+                cbSize: mem::size_of::<WNDCLASSEXW>() as _,
+                hInstance: hinstance.into(),
+                lpszClassName: classname,
+                lpszMenuName: PCWSTR::null(),
+                hCursor: LoadCursorW(None, IDI_APPLICATION).unwrap(),
+                hbrBackground: CreateSolidBrush(COLORREF(0x000000)),
+                ..Default::default()
+            }
+        };
+
+        // SAFETY:
+        assert_ne!(
+            unsafe { RegisterClassExW(&class) },
+            0,
+            "RegisterClassExW returns 0"
+        );
+    }
+
+    fn create_window(&mut self, info: WindowInitialInfo) -> Window {
+        let hinstance = self.hinstance;
+        let classname = self.classname;
+        let ud = self.ud;
+        let handle = NativeWindow::new(info, hinstance, classname, ud.clone());
+        match handle {
+            Ok(handle) => 
+        Window { handle },
+            Err(
+    }
+}
+
+pub(crate) struct EventDispatcher {
+    mode: RunMode,
+    receiver: mpsc::Receiver<Event>,
+    sender: mpsc::Sender<Event>,
+}
+
+impl EventDispatcher {
+    pub fn new(mode: RunMode) -> Self {
+        let (sender, receiver) = mpsc::channel();
+        Self {
+            mode,
+            receiver,
+            sender,
+        }
+    }
+
+    pub fn get_sender(&self) -> mpsc::Sender<Event> {
+        self.sender.clone()
+    }
+
+    pub fn dispatch_events(&self) -> Event {
         let mut msg = MSG::default();
 
         unsafe {
@@ -240,10 +320,10 @@ impl EventRunner {
                 DispatchMessageW(msg.borrow_mut());
 
                 if msg.message == WM_QUIT {
-                    return Some(ReturnCode::Exit);
+                    return Event::Exit(ExitCode::Success);
                 }
             }
         }
-        None
+        Event::None
     }
 }
