@@ -1,6 +1,6 @@
 use raw_window_handle::{HandleError, HasWindowHandle, WindowHandle};
 
-use crate::driver::{self, error::WindowHandlerError};
+use crate::driver;
 
 pub struct Window {
     handler: driver::WindowHandler,
@@ -8,7 +8,7 @@ pub struct Window {
 
 #[derive(Debug)]
 pub enum WindowError {
-    ImplError(WindowHandlerError),
+    ImplError(driver::WHImplError),
 }
 
 pub type WindowResult<T> = Result<T, WindowError>;
@@ -22,6 +22,10 @@ pub struct WindowInitialInfo {
 }
 
 impl Window {
+    pub(crate) fn new(handler: driver::WindowHandler) -> Self {
+        Window { handler }
+    }
+
     pub fn apply_system_appearance(&self) {
         self.handler.apply_system_appearance();
     }

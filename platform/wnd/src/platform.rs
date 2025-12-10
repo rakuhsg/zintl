@@ -1,5 +1,3 @@
-use std::sync::mpsc::{channel, Receiver, Sender};
-
 use crate::driver::{EventDispatcher, PlatformImpl, PlatformImplError};
 use crate::event::{Event, RunMode};
 use crate::window::{Window, WindowInitialInfo};
@@ -23,7 +21,7 @@ impl Platform {
     }
 
     pub fn create_window(&mut self, info: WindowInitialInfo) -> Window {
-        let sender = evd.get_sender();
+        let sender = self.evd.get_sender();
     }
 
     pub fn dispatch(&self) -> Event {
