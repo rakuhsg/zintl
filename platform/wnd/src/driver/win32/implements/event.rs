@@ -37,6 +37,15 @@ impl EventDispatcher {
                     return Event::Exit(ExitCode::Success);
                 }
             }
+
+            match self.receiver.try_recv() {
+                Ok(e) => {
+                    return e;
+                }
+                Err(mpsc::TryRecvError::Empty) => {}
+                // TODO
+                Err(mpsc::TryRecvError::Disconnected) => {}
+            };
         }
         Event::None
     }

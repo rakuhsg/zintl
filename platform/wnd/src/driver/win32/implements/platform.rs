@@ -67,7 +67,11 @@ impl PlatformImpl {
         Self::enable_hidpi_support();
         let hinstance = Self::get_hinstance()?;
         let classname = Self::initialize_window_class(hinstance)?;
-        let userdata = WindowUserData::new(sender);
+        let userdata = WindowUserData::new(sender.clone());
+        match sender.send(Event::Init) {
+            Ok(..) => {}
+            Err(..) => return Err(PlatformImplError::MPSCSenderErr),
+        };
         Ok(PlatformImpl {
             ud: Arc::new(RwLock::new(userdata)),
             hinstance,
@@ -121,11 +125,11 @@ impl PlatformImpl {
         }
     }
 
-    fn create_window(&mut self, info: WindowInitialInfo) -> PlatformImplResult<Window> {
+    pub fn create_window(&mut self, info: WindowInitialInfo) -> PlatformImplResult<Window> {
         let hinstance = self.hinstance;
         let classname = self.classname;
-        let ud = self.ud;
-        let handler = NativeWindow::new(info, hinstance, classname, ud.clone());
+        let ud = self.ud.clone();
+        let handler = NativeWindow::new(info, hinstance, classname, ud);
         match handler {
             Ok(handler) => Ok(Window::new(handler)),
             Err(e) => Err(PlatformImplError::WHError(e)),

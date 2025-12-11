@@ -1,7 +1,8 @@
 use wnd::prelude::*;
 
 fn main() {
-    let mut platform = Platform::new().unwrap();
+    let mut platform = Platform::new(RunMode::Poll).unwrap();
+    #[allow(unused)]
     let mut window: Option<Window> = None;
 
     loop {
@@ -18,11 +19,11 @@ fn main() {
                     .create_window(info)
                     .expect("unable to create window");
                 win.apply_system_appearance();
-                window = Some(window.clone());
+                window = Some(win);
             }
             Event::Exit(code) => match code {
-                ReturnCode::Exit => {
-                    window.terminate_or(None);
+                ExitCode::Success => {
+                    //window.terminate_or(None);
                     break;
                 }
             },

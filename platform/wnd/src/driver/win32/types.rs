@@ -2,7 +2,7 @@ use crate::platform::PlatformError;
 use crate::window::WindowError;
 
 /// Window Handler Implementation Error
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum WHImplError {
     CreateWindowError(CreateWindowError),
 }
@@ -15,7 +15,7 @@ impl From<WHImplError> for WindowError {
 
 pub type WHImplResult<T> = Result<T, WHImplError>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum CreateWindowError {
     FailedToCreateWindow,
     UnableToEnableHiDpiSupport,
@@ -29,12 +29,12 @@ impl From<CreateWindowError> for WHImplError {
     }
 }
 
-pub type CreateWindowResult<T> = Result<T, CreateWindowError>;
-
+#[derive(Debug, Clone)]
 pub enum PlatformImplError {
     APICallingFailed(String),
     FailedToRegisterClass,
     WHError(WHImplError),
+    MPSCSenderErr,
 }
 
 impl From<PlatformImplError> for PlatformError {

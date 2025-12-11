@@ -2,6 +2,7 @@ use crate::driver::{EventDispatcher, PlatformImpl, PlatformImplError};
 use crate::event::{Event, RunMode};
 use crate::window::{Window, WindowInitialInfo};
 
+#[derive(Debug, Clone)]
 pub enum PlatformError {
     ImplError(PlatformImplError),
 }
@@ -20,8 +21,9 @@ impl Platform {
         Ok(Platform { imp, evd })
     }
 
-    pub fn create_window(&mut self, info: WindowInitialInfo) -> Window {
-        let sender = self.evd.get_sender();
+    pub fn create_window(&mut self, info: WindowInitialInfo) -> PlatformResult<Window> {
+        let window = self.imp.create_window(info)?;
+        Ok(window)
     }
 
     pub fn dispatch(&self) -> Event {
