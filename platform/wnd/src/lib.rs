@@ -10,4 +10,6 @@
 
 mod driver;
 pub mod event;
+pub mod platform;
+pub mod prelude;
 pub mod window;
