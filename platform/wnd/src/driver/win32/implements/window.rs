@@ -19,8 +19,8 @@ use windows::Win32::{
         Controls::MARGINS,
         HiDpi::GetDpiForWindow,
         WindowsAndMessaging::{
-            CreateWindowExW, SetWindowPos, ShowWindow, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOREDRAW,
-            SWP_NOZORDER, SW_SHOW, WINDOW_EX_STYLE, WS_OVERLAPPEDWINDOW,
+            CreateWindowExW, SetWindowPos, SetWindowTextW, ShowWindow, SWP_NOACTIVATE, SWP_NOMOVE,
+            SWP_NOREDRAW, SWP_NOZORDER, SW_SHOW, WINDOW_EX_STYLE, WS_OVERLAPPEDWINDOW,
         },
     },
 };
@@ -44,6 +44,11 @@ impl WindowUserData {
             sender,
             state: WindowState {},
         }
+    }
+
+    pub fn send(&self, event: Event) -> WindowUDResult<()> {
+        self.sender.send(event)?;
+        Ok(())
     }
 }
 
@@ -114,7 +119,11 @@ impl NativeWindow {
         Ok(hwnd)
     }
 
-    pub fn set_title(&self, title: &str) {}
+    pub fn set_title(&self, title: String) {
+        unsafe {
+            SetWindowTextW(self.hwnd, title.to_pcwstr());
+        }
+    }
 
     pub fn get_title(&self) {}
 
