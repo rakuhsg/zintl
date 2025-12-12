@@ -1,5 +1,7 @@
+use crate::event::Event;
 use crate::platform::PlatformError;
 use crate::window::WindowError;
+use std::sync::mpsc;
 
 /// Window Handler Implementation Error
 #[derive(Debug, Clone)]
@@ -44,3 +46,17 @@ impl From<PlatformImplError> for PlatformError {
 }
 
 pub type PlatformImplResult<T> = Result<T, PlatformImplError>;
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub enum WindowUDError {
+    SendMessageError(mpsc::SendError<Event>),
+}
+
+impl From<mpsc::SendError<Event>> for WindowUDError {
+    fn from(v: mpsc::SendError<Event>) -> Self {
+        WindowUDError::SendMessageError(v)
+    }
+}
+
+pub type WindowUDResult<T> = Result<T, WindowUDError>;

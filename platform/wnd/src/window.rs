@@ -30,7 +30,7 @@ impl Window {
         self.handler.apply_system_appearance();
     }
 
-    pub fn set_title(&self, title: &str) {
+    pub fn set_title(&self, title: String) {
         self.handler.set_title(title);
     }
 

@@ -21,6 +21,14 @@ fn main() {
                 win.apply_system_appearance();
                 window = Some(win);
             }
+            Event::WindowEvent(we) => match we {
+                WindowEvent::MouseDown(i) => {
+                    if let Some(window) = &window {
+                        window.set_title(format!("{}", i.pos_x));
+                    }
+                }
+                _ => {}
+            },
             Event::Exit(code) => match code {
                 ExitCode::Success => {
                     //window.terminate_or(None);

@@ -1,7 +1,7 @@
 use super::window::{NativeWindow, WindowUserData};
 use crate::driver::win32::types::*;
 use crate::driver::win32::utils::string::StringExt;
-use crate::event::Event;
+use crate::event::{Event, MouseInput, WindowEvent};
 use crate::window::{Window, WindowInitialInfo};
 use std::sync::{mpsc, Arc, RwLock};
 
@@ -17,7 +17,7 @@ use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowLongPt
 use windows::Win32::UI::WindowsAndMessaging::{LoadCursorW, IDI_APPLICATION};
 use windows::Win32::UI::WindowsAndMessaging::{RegisterClassExW, WNDCLASSEXW};
 use windows::Win32::UI::WindowsAndMessaging::{
-    CREATESTRUCTW, GWLP_USERDATA, WM_CREATE, WM_DESTROY, WM_PAINT,
+    CREATESTRUCTW, GWLP_USERDATA, WM_CREATE, WM_DESTROY, WM_LBUTTONDOWN, WM_PAINT,
 };
 use windows::Win32::UI::WindowsAndMessaging::{CS_HREDRAW, CS_VREDRAW};
 
@@ -41,11 +41,24 @@ unsafe extern "system" fn wndproc(
         return DefWindowProcW(hwnd, u_msg, w_param, l_param);
     }
 
-    let _ud = &*(ud);
+    let ud = &*(ud);
 
     match u_msg {
         WM_PAINT => {
             let _ = InvalidateRect(hwnd, None, true);
+            DefWindowProcW(hwnd, u_msg, w_param, l_param)
+        }
+        WM_LBUTTONDOWN => {
+            let input = MouseInput { pos_x: 0, pos_y: 0 };
+            match ud.read() {
+                Ok(ud) => match ud.send(Event::WindowEvent(WindowEvent::MouseDown(input))) {
+                    Ok(..) => {}
+                    Err(_e) => {
+                        //TODO
+                    }
+                },
+                Err(..) => {}
+            }
             DefWindowProcW(hwnd, u_msg, w_param, l_param)
         }
         WM_DESTROY => {
