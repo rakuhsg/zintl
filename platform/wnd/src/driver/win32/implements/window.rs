@@ -1,28 +1,33 @@
-use crate::driver::win32::types::*;
-use crate::driver::win32::utils::string::StringExt;
-use crate::event::Event;
-use crate::window::WindowInitialInfo;
 use std::sync::{mpsc, Arc, RwLock};
 
-use windows::core::PCWSTR;
-use windows::Win32::{
-    Foundation::{HMODULE, HWND},
-    Graphics::{
-        Dwm::{
-            DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DWMSBT_MAINWINDOW,
-            DWMWA_SYSTEMBACKDROP_TYPE, DWM_SYSTEMBACKDROP_TYPE,
+use windows::{
+    core::PCWSTR,
+    Win32::{
+        Foundation::{HMODULE, HWND},
+        Graphics::{
+            Dwm::{
+                DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DWMSBT_MAINWINDOW,
+                DWMWA_SYSTEMBACKDROP_TYPE, DWM_SYSTEMBACKDROP_TYPE,
+            },
+            Gdi::UpdateWindow,
         },
-        Gdi::UpdateWindow,
-    },
-    System::LibraryLoader::GetModuleHandleW,
-    UI::{
-        Controls::MARGINS,
-        HiDpi::GetDpiForWindow,
-        WindowsAndMessaging::{
-            CreateWindowExW, SetWindowPos, SetWindowTextW, ShowWindow, SWP_NOACTIVATE, SWP_NOMOVE,
-            SWP_NOREDRAW, SWP_NOZORDER, SW_SHOW, WINDOW_EX_STYLE, WS_OVERLAPPEDWINDOW,
+        System::LibraryLoader::GetModuleHandleW,
+        UI::{
+            Controls::MARGINS,
+            HiDpi::GetDpiForWindow,
+            WindowsAndMessaging::{
+                CreateWindowExW, SetWindowPos, SetWindowTextW, ShowWindow, SWP_NOACTIVATE,
+                SWP_NOMOVE, SWP_NOREDRAW, SWP_NOZORDER, SW_SHOW, WINDOW_EX_STYLE,
+                WS_OVERLAPPEDWINDOW,
+            },
         },
     },
+};
+
+use crate::{
+    driver::{types::*, win32::utils::string::StringExt},
+    event::Event,
+    window::WindowInitialInfo,
 };
 
 pub struct NativeWindow {

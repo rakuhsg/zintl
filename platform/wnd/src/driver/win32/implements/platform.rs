@@ -1,25 +1,28 @@
-use super::window::{NativeWindow, WindowUserData};
-use crate::driver::win32::types::*;
-use crate::driver::win32::utils::string::StringExt;
-use crate::event::{Event, MouseInput, WindowEvent};
-use crate::window::{Window, WindowInitialInfo};
 use std::sync::{mpsc, Arc, RwLock};
 
-use windows::core::PCWSTR;
-use windows::Win32::Foundation::{COLORREF, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
-use windows::Win32::Graphics::Gdi::{CreateSolidBrush, InvalidateRect};
-use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::HiDpi::{
-    SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+use windows::{
+    core::PCWSTR,
+    Win32::{
+        Foundation::{COLORREF, HMODULE, HWND, LPARAM, LRESULT, WPARAM},
+        Graphics::Gdi::{CreateSolidBrush, InvalidateRect},
+        System::LibraryLoader::GetModuleHandleW,
+        UI::{
+            HiDpi::{SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2},
+            WindowsAndMessaging::{
+                DefWindowProcW, GetWindowLongPtrW, LoadCursorW, PostQuitMessage, RegisterClassExW,
+                SetWindowLongPtrW, CREATESTRUCTW, CS_HREDRAW, CS_VREDRAW, GWLP_USERDATA,
+                IDI_APPLICATION, WM_CREATE, WM_DESTROY, WM_LBUTTONDOWN, WM_PAINT, WNDCLASSEXW,
+            },
+        },
+    },
 };
-use windows::Win32::UI::WindowsAndMessaging::{DefWindowProcW, PostQuitMessage};
-use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowLongPtrW};
-use windows::Win32::UI::WindowsAndMessaging::{LoadCursorW, IDI_APPLICATION};
-use windows::Win32::UI::WindowsAndMessaging::{RegisterClassExW, WNDCLASSEXW};
-use windows::Win32::UI::WindowsAndMessaging::{
-    CREATESTRUCTW, GWLP_USERDATA, WM_CREATE, WM_DESTROY, WM_LBUTTONDOWN, WM_PAINT,
+
+use super::window::{NativeWindow, WindowUserData};
+use crate::{
+    driver::{types::*, win32::utils::string::StringExt},
+    event::{Event, MouseInput, WindowEvent},
+    window::{Window, WindowInitialInfo},
 };
-use windows::Win32::UI::WindowsAndMessaging::{CS_HREDRAW, CS_VREDRAW};
 
 // TODO: safety note
 unsafe extern "system" fn wndproc(
