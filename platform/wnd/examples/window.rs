@@ -5,6 +5,16 @@ fn main() {
     #[allow(unused)]
     let mut window: Option<Window> = None;
 
+    let info = WindowInitialInfo {
+        pos_x: 0,
+        pos_y: 0,
+        width: 640,
+        height: 480,
+        title: String::from("window"),
+    };
+    let win = platform
+        .create_window(info)
+        .expect("unable to create window");
     loop {
         match platform.dispatch() {
             Event::Init => {
@@ -22,11 +32,10 @@ fn main() {
                 window = Some(win);
             }
             Event::WindowEvent(we) => match we {
-                WindowEvent::MouseDown(i) => {
+                WindowEvent::MouseDown(i) =>
                     if let Some(window) = &window {
                         window.set_title(format!("{}", i.pos_x));
-                    }
-                }
+                    },
                 _ => {}
             },
             Event::Exit(code) => match code {
