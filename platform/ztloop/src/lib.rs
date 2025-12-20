@@ -1,14 +1,17 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+mod implementation;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[cfg(target_os = "macos")]
+pub use implementation::appkit::AppkitEventPump as EventPumpImpl;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+/// [`EventPump`] is an abstraction of a native message loop.
+/// NOTE: Commonly, only one [`EventPump`] can exist at a time. After
+/// [`EventPump`] drops, you can initialize EventPump again.
+/// NOTE: Commonly, implementations are !Send !Sync.
+pub trait EventPump {
+    /// Run event loop.
+    /// NOTE: Must be called on main thread.
+    fn run(&mut self);
+    /// Exit the event loop immidiately.
+    /// NOTE: Must be called on main thread.
+    fn quit(&mut self);
 }
