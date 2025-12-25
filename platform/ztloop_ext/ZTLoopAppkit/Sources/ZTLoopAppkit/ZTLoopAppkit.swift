@@ -25,7 +25,7 @@ func ztloopInit() {
 func ztloopRun() {
     Task { @MainActor in
         guard let loop = ZTLoopState.shared.loop else {
-            assertionFailure("ZTLoopState.loop is not initialized")
+            assertionFailure("ZTLoopState is not initialized")
             return
         }
 
