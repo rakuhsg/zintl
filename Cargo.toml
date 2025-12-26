@@ -11,6 +11,7 @@ members = [
     "test/zintl-test",
     "platform/ztloop",
     "test/zintl-test-mvq",
+    "graphics/ztglyphs",
 ]
 
 [workspace.package]
