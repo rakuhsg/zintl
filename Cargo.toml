@@ -8,7 +8,9 @@ members = [
     "graphics/rpp",
     "platform/wnd",
     "web/zintl-wasm",
-    "test/zintl-test", "platform/ztloop",
+    "test/zintl-test",
+    "platform/ztloop",
+    "test/zintl-test-mvq",
 ]
 
 [workspace.package]

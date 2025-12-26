@@ -9,3 +9,6 @@ version.workspace = true
 [dependencies]
 zintl-ui.workspace = true
 zintl-ui-macro.workspace = true
+
+[features]
+mvq = ["zintl-ui/mvq"]

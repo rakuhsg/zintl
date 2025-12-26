@@ -1,0 +1,10 @@
+[package]
+name = "zintl-test-mvq"
+edition = "2024"
+license.workspace = true
+description.workspace = true
+authors.workspace = true
+version.workspace = true
+
+[dependencies]
+zintl = { workspace = true, features = ["mvq"] }
