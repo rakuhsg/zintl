@@ -1,5 +1,6 @@
 #[cfg(target_os = "macos")]
 unsafe extern "C" {
-    pub fn ztloop_init();
-    pub fn ztloop_run();
+    pub fn ztloopa_init();
+    pub fn ztloopa_run();
+    pub fn ztloopa_destroy();
 }

@@ -8,7 +8,7 @@ class ZTLoopState {
     var loop: CFRunLoop?;
 }
 
-@_cdecl("ztloop_init")
+@_cdecl("ztloopa_init")
 func ztloopInit() {
     let loop = RunLoop.current.getCFRunLoop();
     Task {@MainActor in
@@ -21,7 +21,7 @@ func ztloopInit() {
     }
 }
 
-@_cdecl("ztloop_run")
+@_cdecl("ztloopa_run")
 func ztloopRun() {
     Task { @MainActor in
         guard let loop = ZTLoopState.shared.loop else {
@@ -36,4 +36,11 @@ func ztloopRun() {
     }
     
     RunLoop.current.run()
+}
+
+@_cdecl("ztloopa_destroy")
+func ztloopDestroy() {
+    Task { @MainActor in
+        ZTLoopState.shared.loop = nil
+    }
 }

@@ -4,15 +4,17 @@ pub struct AppkitEventPump {}
 
 impl AppkitEventPump {
     pub fn new() -> Self {
-        unsafe { binding::ztloop_init() };
+        unsafe { binding::ztloopa_init() };
         AppkitEventPump {}
     }
 }
 
 impl EventPump for AppkitEventPump {
     fn run(&mut self) {
-        unsafe { binding::ztloop_run() };
+        unsafe { binding::ztloopa_run() };
     }
 
-    fn quit(&mut self) {}
+    fn quit(&mut self) {
+        unsafe { binding::ztloopa_destroy() };
+    }
 }
