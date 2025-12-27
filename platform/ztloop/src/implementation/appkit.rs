@@ -1,15 +1,15 @@
-use crate::{EventPump, implementation::appkit_binding as binding};
+use crate::{implementation::appkit_binding as binding, osloop::OSLoop};
 
-pub struct AppkitEventPump {}
+pub struct AppkitOSLoop {}
 
-impl AppkitEventPump {
+impl AppkitOSLoop {
     pub fn new() -> Self {
         unsafe { binding::ztloopa_init() };
-        AppkitEventPump {}
+        AppkitOSLoop {}
     }
 }
 
-impl EventPump for AppkitEventPump {
+impl OSLoop for AppkitOSLoop {
     fn run(&mut self) {
         unsafe { binding::ztloopa_run() };
     }

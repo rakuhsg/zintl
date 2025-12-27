@@ -1,15 +1,14 @@
 #[cfg(target_os = "macos")]
-pub use crate::implementation::appkit::AppkitEventPump as EventPumpImpl;
+pub use crate::implementation::appkit::AppkitOSLoop as OSLoopImpl;
 
-/// [`EventPump`] is an abstraction of a native message loop.
-/// NOTE: Commonly, only one [`EventPump`] can exist at a time. After
-/// [`EventPump`] drops, you can initialize EventPump again.
+/// [`OSLoop`] is an abstraction of a native message loop.
+/// NOTE: Commonly, only one [`OSLoop`] can exist at a time on the thread. After
+/// [`OSLoop`] drops, you can initialize OSLoop again.
 /// NOTE: Commonly, implementations are !Send !Sync.
-pub trait EventPump {
+pub trait OSLoop {
     /// Run event loop.
-    /// NOTE: Must be called on main thread.
     fn run(&mut self);
     /// Exit the event loop immidiately.
-    /// NOTE: Must be called on main thread.
+    /// NOTE: Must be called on the thread that run() called before.
     fn quit(&mut self);
 }
