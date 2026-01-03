@@ -9,4 +9,3 @@ version.workspace = true
 [dependencies]
 
 [features]
-mvq = []

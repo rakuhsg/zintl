@@ -9,7 +9,6 @@ members = [
     "platform/wnd",
     "web/zintl-wasm",
     "test/zintl-test",
-    "test/zintl-test-mvq",
     "graphics/ztglyphs",
 ]
 
