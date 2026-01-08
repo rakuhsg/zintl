@@ -3,7 +3,7 @@ resolver = "3"
 members = [
     "graphics/rpp",
     "platform/wnd",
-    "graphics/ztglyphs",
+    "graphics/ztglyphs", "core/zintl",
 ]
 
 [workspace.package]
