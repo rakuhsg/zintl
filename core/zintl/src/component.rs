@@ -1,1 +1,5 @@
-pub trait Element {}
+pub trait Component {
+    type RenderNode;
+
+    fn render(&self) -> Self::RenderNode;
+}

@@ -33,3 +33,7 @@ impl HookContext {
         self.triggered.push(id);
     }
 }
+
+pub struct HookManager<M> {
+    hooks: Vec<Box<dyn Hook<Message = M>>>,
+}
