@@ -1,7 +1,9 @@
-#[derive(Clone, Copy, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct HookId(usize);
 
 impl HookId {
+    pub const UNINITIALIZED: Self = HookId(0);
+
     pub fn new(id: usize) -> Self {
         HookId(id)
     }
