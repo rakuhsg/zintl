@@ -11,7 +11,7 @@ pub struct ClickEventHook {
 impl Hook for ClickEventHook {
     type Message = SystemMessage;
 
-    fn set_id(&mut self, id: HookId) {
+    fn init(&mut self, id: HookId) {
         self.id = id;
     }
 

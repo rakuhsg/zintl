@@ -13,7 +13,7 @@ impl HookId {
 
 pub trait Hook {
     type Message;
-    fn set_id(&mut self, id: HookId);
+    fn init(&mut self, id: HookId);
     fn get_id(&self) -> HookId;
     fn handle_message(&mut self, cx: &mut HookContext, message: Self::Message);
 }
